@@ -2,7 +2,7 @@ import type { AuthProvider } from "react-admin";
 import { Login, SignUp } from "../api/cliente";
 
 export const authProvider: AuthProvider = {
-  signup: async (userData) => {
+  signup: async (userData: any) => {
     try {
       const response = await SignUp("/auth/signup", userData, true);
       // Si la respuesta es 201, retorna status y mensaje
@@ -39,9 +39,11 @@ export const authProvider: AuthProvider = {
         return Promise.resolve();
       }
       return Promise.reject(new Error("No se recibió el token de acceso"));
-    } catch (error) {
-      console.error("Error durante el login:", error);
-      return Promise.reject(new Error("Falló la autenticación"));
+    } catch (error: any) {
+      // Extrae el mensaje real del backend si existe
+      const status = error?.response?.status || 500;
+      const message = error?.response?.data?.message || error.message || "Falló la autenticación";
+      return Promise.reject({ status, message });
     }
   },
 

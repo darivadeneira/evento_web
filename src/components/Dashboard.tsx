@@ -10,9 +10,14 @@ import {
   Chip,
   IconButton,
   Badge,
-  Tooltip
+  Tooltip,
+  Menu,
+  MenuItem
 } from '@mui/material';
 import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { authProvider } from '../providers/auth.provider';
+import { jwtDecode } from 'jwt-decode';
 // Import the TypeScript version directly
 import MapModal from './mapa/MapModal';
 import EventIcon from '@mui/icons-material/Event';
@@ -26,29 +31,72 @@ import DevicesIcon from '@mui/icons-material/Devices';
 import MenuBookIcon from '@mui/icons-material/MenuBook';
 
 export const Dashboard = () => {
-  // Estado para controlar el modal del mapa
   const [mapModalOpen, setMapModalOpen] = useState(false);
   const [selectedEvent, setSelectedEvent] = useState<{title: string, location: string} | null>(null);
+  const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
+  const openMenu = Boolean(anchorEl);
 
-  // Función para abrir el modal del mapa con el evento seleccionado
+  const navigate = useNavigate();
+
+  let user = null;
+  try {
+    user = JSON.parse(localStorage.getItem('auth') || '{}');
+  } catch {
+    user = null;
+  }
+
+  if (user && user.token) {
+    try {
+      const decoded: any = jwtDecode(user.token);
+      const now = Math.floor(Date.now() / 1000);
+      if (decoded.exp && decoded.exp < now) {
+        authProvider.logout({});
+        localStorage.removeItem('auth');
+        window.location.href = '/login';
+        return null;
+      }
+    } catch (e) {
+      authProvider.logout({});
+      localStorage.removeItem('auth');
+      navigate('/login', { replace: true });
+      return null;
+    }
+  }
+
   const handleOpenMapModal = (event: {title: string, location: string}) => {
     setSelectedEvent(event);
     setMapModalOpen(true);
   };
 
-  // Usamos try-catch para manejar el caso cuando el componente se renderiza fuera del contexto de react-admin
   let userName = 'Usuario';
+  if (user && user.name) {
+    userName = user.name;
+  } else if (user && user.username) {
+    userName = user.username;
+  }
+
+  let rol = 'Usuario';
+  if (user && user.rol) {
+    rol = user.rol;
+  }else if (user && user.role) {
+    rol = user.role;
+  }
+
   let isLoadingUser = false;
+
+  // Handler para logout
+  const handleLogout = async () => {
+    await authProvider.logout({});
+    navigate('/login', { replace: true });
+  };
   
   try {
-    // Este código se ejecutará correctamente dentro del contexto de react-admin
     const { data: identity, isLoading } = useGetIdentity();
     isLoadingUser = isLoading;
     if (identity) {
       userName = identity.firstName || identity.username || identity.fullName || 'Usuario';
     }
   } catch (error) {
-    // Si hay un error (componente renderizado fuera del contexto de react-admin)
     console.log('Renderizando Dashboard fuera del contexto de react-admin');
   }
   
@@ -62,8 +110,7 @@ export const Dashboard = () => {
   return (
     <Box sx={{ py: 4, px: { xs: 2, md: 4 } }}>
       <Title title="GEB - Gestión de Eventos y Boletería" />
-      
-      {/* Barra superior con perfil de usuario y notificaciones */}
+      {/* Barra superior con menú de usuario */}
       <Box
         sx={{
           position: 'relative',
@@ -88,22 +135,41 @@ export const Dashboard = () => {
         </Tooltip>
         <Tooltip title="Mi perfil">
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, bgcolor: 'white', borderRadius: 20, p: '4px 12px 4px 4px', boxShadow: 1 }}>
-            <Avatar 
-              sx={{ 
-                width: 36, 
-                height: 36, 
-                bgcolor: 'secondary.main',
-                fontSize: '1rem',
-                fontWeight: 'bold'
-              }}
-            >
-              {userName.charAt(0).toUpperCase()}
-            </Avatar>
+            <IconButton onClick={(event) => setAnchorEl(event.currentTarget)} sx={{ p: 0 }}>
+              <Avatar 
+                sx={{ 
+                  width: 36, 
+                  height: 36, 
+                  bgcolor: 'secondary.main',
+                  fontSize: '1rem',
+                  fontWeight: 'bold'
+                }}
+              >
+                {userName.charAt(0).toUpperCase()}
+              </Avatar>
+            </IconButton>
             <Typography variant="body2" fontWeight="medium">
               {userName}
             </Typography>
           </Box>
         </Tooltip>
+        {/* Menú desplegable del usuario */}
+        <Menu
+          anchorEl={anchorEl}
+          open={openMenu}
+          onClose={() => setAnchorEl(null)}
+          anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
+          transformOrigin={{ vertical: 'top', horizontal: 'right' }}
+        >
+          <MenuItem
+            onClick={() => {
+              setAnchorEl(null);
+              handleLogout();
+            }}
+          >
+            Cerrar sesión
+          </MenuItem>
+        </Menu>
       </Box>
       
       {/* Banner de bienvenida con perfil de usuario */}
@@ -146,11 +212,11 @@ export const Dashboard = () => {
                     fontWeight: 400
                   }}
                 >
-                  Tu plataforma integral para la gestión de eventos y boletería
+                  Plataforma para la gestión de eventos y boletería
                 </Typography>
                 <Box mt={2}>
                   <Chip 
-                    label="Organizador" 
+                    label={rol}
                     color="secondary" 
                     sx={{ 
                       color: 'white',
@@ -159,7 +225,7 @@ export const Dashboard = () => {
                       bgcolor: 'rgba(255, 255, 255, 0.2)',
                       '&:hover': { bgcolor: 'rgba(255, 255, 255, 0.3)' }
                     }} 
-                  />
+                  /> {}
                   <Chip 
                     label="3 eventos activos" 
                     icon={<EventIcon sx={{ color: 'white' }} />} 
