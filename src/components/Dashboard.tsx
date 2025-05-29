@@ -1,34 +1,25 @@
-import { useGetIdentity, Title } from 'react-admin';
 import { 
   Box, 
   Card, 
   Typography,  
-  Grid, 
   Container, 
   Button, 
-  Avatar, 
   Chip,
-  IconButton,
-  Badge,
-  Tooltip,
-  Menu,
-  MenuItem
+  Stack
 } from '@mui/material';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { authProvider } from '../providers/auth.provider';
 import { jwtDecode } from 'jwt-decode';
-// Import the TypeScript version directly
 import MapModal from './mapa/MapModal';
 import EventIcon from '@mui/icons-material/Event';
 import CalendarMonthIcon from '@mui/icons-material/CalendarMonth';
-import NotificationsIcon from '@mui/icons-material/Notifications';
-import SettingsIcon from '@mui/icons-material/Settings';
 import LocationOnIcon from '@mui/icons-material/LocationOn';
 import MusicNoteIcon from '@mui/icons-material/MusicNote';
 import LibraryMusicIcon from '@mui/icons-material/LibraryMusic';
 import DevicesIcon from '@mui/icons-material/Devices';
 import MenuBookIcon from '@mui/icons-material/MenuBook';
+import { EventList } from './events/EventList';
 
 export const Dashboard = () => {
   const [mapModalOpen, setMapModalOpen] = useState(false);
@@ -37,142 +28,40 @@ export const Dashboard = () => {
   const openMenu = Boolean(anchorEl);
 
   const navigate = useNavigate();
+  const storedAuth = localStorage.getItem('auth');
+  const authData = storedAuth ? JSON.parse(storedAuth) : null;
 
-  let user = null;
-  try {
-    user = JSON.parse(localStorage.getItem('auth') || '{}');
-  } catch {
-    user = null;
-  }
-
-  if (user && user.token) {
+  useEffect(() => {
     try {
-      const decoded: any = jwtDecode(user.token);
-      const now = Math.floor(Date.now() / 1000);
-      if (decoded.exp && decoded.exp < now) {
-        authProvider.logout({});
-        localStorage.removeItem('auth');
-        window.location.href = '/login';
-        return null;
+      if (storedAuth) {
+        console.log(authData);
+        if (authData.token) {
+          const decoded: any = jwtDecode(authData.token);
+          const now = Math.floor(Date.now() / 1000);
+          if (decoded.exp && decoded.exp < now) {
+            handleLogout();
+          }
+        }
       }
-    } catch (e) {
-      authProvider.logout({});
-      localStorage.removeItem('auth');
-      navigate('/login', { replace: true });
-      return null;
+    } catch (error) {
+      console.error('Error al obtener datos de autenticación:', error);
+      handleLogout();
     }
-  }
+  }, []);
+
+  const handleLogout = async () => {
+    await authProvider.logout({});
+    localStorage.removeItem('auth');
+    navigate('/login', { replace: true });
+  };
 
   const handleOpenMapModal = (event: {title: string, location: string}) => {
     setSelectedEvent(event);
     setMapModalOpen(true);
   };
 
-  let userName = 'Usuario';
-  if (user && user.name) {
-    userName = user.name;
-  } else if (user && user.username) {
-    userName = user.username;
-  }
-
-  let rol = 'Usuario';
-  if (user && user.rol) {
-    rol = user.rol;
-  }else if (user && user.role) {
-    rol = user.role;
-  }
-
-  let isLoadingUser = false;
-
-  // Handler para logout
-  const handleLogout = async () => {
-    await authProvider.logout({});
-    navigate('/login', { replace: true });
-  };
-  
-  try {
-    const { data: identity, isLoading } = useGetIdentity();
-    isLoadingUser = isLoading;
-    if (identity) {
-      userName = identity.firstName || identity.username || identity.fullName || 'Usuario';
-    }
-  } catch (error) {
-    console.log('Renderizando Dashboard fuera del contexto de react-admin');
-  }
-  
-  if (isLoadingUser) {
-    return (
-      <Box display="flex" justifyContent="center">
-        <Typography variant="h6">Cargando...</Typography>
-      </Box>
-    );
-  }
   return (
     <Box sx={{ py: 4, px: { xs: 2, md: 4 } }}>
-      <Title title="GEB - Gestión de Eventos y Boletería" />
-      {/* Barra superior con menú de usuario */}
-      <Box
-        sx={{
-          position: 'relative',
-          display: 'flex',
-          justifyContent: 'flex-end',
-          alignItems: 'center',
-          mb: 3,
-          gap: 2
-        }}
-      >
-        <Tooltip title="Notificaciones">
-          <IconButton sx={{ bgcolor: 'white', boxShadow: 1 }}>
-            <Badge badgeContent={3} color="error">
-              <NotificationsIcon />
-            </Badge>
-          </IconButton>
-        </Tooltip>
-        <Tooltip title="Configuración">
-          <IconButton sx={{ bgcolor: 'white', boxShadow: 1 }}>
-            <SettingsIcon />
-          </IconButton>
-        </Tooltip>
-        <Tooltip title="Mi perfil">
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, bgcolor: 'white', borderRadius: 20, p: '4px 12px 4px 4px', boxShadow: 1 }}>
-            <IconButton onClick={(event) => setAnchorEl(event.currentTarget)} sx={{ p: 0 }}>
-              <Avatar 
-                sx={{ 
-                  width: 36, 
-                  height: 36, 
-                  bgcolor: 'secondary.main',
-                  fontSize: '1rem',
-                  fontWeight: 'bold'
-                }}
-              >
-                {userName.charAt(0).toUpperCase()}
-              </Avatar>
-            </IconButton>
-            <Typography variant="body2" fontWeight="medium">
-              {userName}
-            </Typography>
-          </Box>
-        </Tooltip>
-        {/* Menú desplegable del usuario */}
-        <Menu
-          anchorEl={anchorEl}
-          open={openMenu}
-          onClose={() => setAnchorEl(null)}
-          anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
-          transformOrigin={{ vertical: 'top', horizontal: 'right' }}
-        >
-          <MenuItem
-            onClick={() => {
-              setAnchorEl(null);
-              handleLogout();
-            }}
-          >
-            Cerrar sesión
-          </MenuItem>
-        </Menu>
-      </Box>
-      
-      {/* Banner de bienvenida con perfil de usuario */}
       <Box
         sx={{
           position: 'relative',
@@ -186,8 +75,15 @@ export const Dashboard = () => {
         }}
       >
         <Container maxWidth="lg">
-          <Grid container alignItems="center" spacing={4}>
-            <Grid item xs={12} md={8}>
+          <Box
+            sx={{
+              display: 'flex',
+              flexDirection: { xs: 'column', md: 'row' },
+              alignItems: 'center',
+              gap: 4,
+            }}
+          >
+            <Box sx={{ flex: 2 }}>
               <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
                 <Typography
                   variant="h2"
@@ -199,7 +95,7 @@ export const Dashboard = () => {
                     lineHeight: 1.2
                   }}
                 >
-                  ¡Bienvenido a EPAA, {userName}!
+                  ¡Bienvenido a EPAA, {authData.username}!
                 </Typography>
                 <Typography
                   variant="h6"
@@ -216,7 +112,7 @@ export const Dashboard = () => {
                 </Typography>
                 <Box mt={2}>
                   <Chip 
-                    label={rol}
+                    label={authData.role}
                     color="secondary" 
                     sx={{ 
                       color: 'white',
@@ -237,12 +133,12 @@ export const Dashboard = () => {
                   />
                 </Box>
               </Box>
-            </Grid>
+            </Box>
 
             {/* Estadísticas rápidas */}
-            <Grid item xs={12} md={4}>
-              <Grid container spacing={1}>
-                <Grid item xs={6}>
+            <Box sx={{ flex: 1 }}>
+              <Stack spacing={1}>
+                <Box>
                   <Box 
                     sx={{ 
                       bgcolor: 'rgba(255, 255, 255, 0.15)', 
@@ -255,8 +151,8 @@ export const Dashboard = () => {
                     <Typography variant="h4" color="white" fontWeight="bold">12</Typography>
                     <Typography variant="body2" color="white">Eventos Totales</Typography>
                   </Box>
-                </Grid>
-                <Grid item xs={6}>
+                </Box>
+                <Box>
                   <Box 
                     sx={{ 
                       bgcolor: 'rgba(255, 255, 255, 0.15)', 
@@ -269,8 +165,8 @@ export const Dashboard = () => {
                     <Typography variant="h4" color="white" fontWeight="bold">189</Typography>
                     <Typography variant="body2" color="white">Boletos Vendidos</Typography>
                   </Box>
-                </Grid>
-                <Grid item xs={12}>
+                </Box>
+                <Box>
                   <Box 
                     sx={{ 
                       mt: 1,
@@ -284,10 +180,10 @@ export const Dashboard = () => {
                     <Typography variant="h4" color="white" fontWeight="bold">$4,850</Typography>
                     <Typography variant="body2" color="white">Ingresos Totales</Typography>
                   </Box>
-                </Grid>
-              </Grid>
-            </Grid>
-          </Grid>
+                </Box>
+              </Stack>
+            </Box>
+          </Box>
         </Container>
         
         {/* Elementos decorativos mejorados */}
@@ -347,170 +243,15 @@ export const Dashboard = () => {
           </Button>
         </Box>
 
-        <Grid container spacing={3}>
-          {[
-            {
-              title: 'Festival de Música Electrónica',
-              image: 'https://source.unsplash.com/random/300×200/?concert',
-              date: '22 Jun 2023',
-              location: 'Centro de Convenciones',
-              price: '$60 USD'
-            },
-            {
-              title: 'Concierto de Rock Alternativo',
-              image: 'https://source.unsplash.com/random/300×200/?rock',
-              date: '25 Jun 2023',
-              location: 'Teatro Principal',
-              price: '$45 USD'
-            },
-            {
-              title: 'Expo Tecnología 2023',
-              image: 'https://source.unsplash.com/random/300×200/?technology',
-              date: '29 Jun 2023',
-              location: 'Centro Exposiciones',
-              price: '$65 USD'
-            },
-            {
-              title: 'Feria del Libro',
-              image: 'https://source.unsplash.com/random/300×200/?books',
-              date: '5 Jul 2023',
-              location: 'Biblioteca Nacional',
-              price: '$15 USD'
-            }
-          ].map((event, index) => (
-            <Grid item xs={12} sm={6} md={3} key={index}>
-              <Card 
-                sx={{ 
-                  borderRadius: 3,
-                  overflow: 'hidden',
-                  transition: 'transform 0.3s, box-shadow 0.3s',
-                  height: '100%',
-                  display: 'flex',
-                  flexDirection: 'column',
-                  '&:hover': {
-                    transform: 'translateY(-8px)',
-                    boxShadow: '0 12px 28px rgba(0,0,0,0.2)'
-                  }
-                }}
-              >                <Box 
-                  sx={{ 
-                    height: 160, 
-                    position: 'relative',
-                    overflow: 'hidden',
-                    display: 'flex',
-                    justifyContent: 'center',
-                    alignItems: 'center',
-                    backgroundColor: index === 0 ? '#3f51b5' : 
-                                    index === 1 ? '#f44336' :
-                                    index === 2 ? '#009688' : '#ff9800',
-                    '&::after': {
-                      content: '""',
-                      position: 'absolute',
-                      bottom: 0,
-                      left: 0,
-                      width: '100%',
-                      height: '30%',
-                      background: 'linear-gradient(to top, rgba(0,0,0,0.3) 0%, rgba(0,0,0,0) 100%)'
-                    }
-                  }}
-                >
-                  <Box 
-                    sx={{ 
-                      width: 100,
-                      height: 100,
-                      display: 'flex',
-                      justifyContent: 'center',
-                      alignItems: 'center',
-                      borderRadius: '50%',
-                      backgroundColor: 'rgba(255, 255, 255, 0.2)',
-                      transform: 'scale(1)',
-                      transition: 'transform 0.4s ease',
-                      '&:hover': {
-                        transform: 'scale(1.1)',
-                        backgroundColor: 'rgba(255, 255, 255, 0.3)'
-                      }
-                    }}
-                  >
-                    {index === 0 ? <MusicNoteIcon sx={{ fontSize: 60, color: 'white' }} /> :
-                     index === 1 ? <LibraryMusicIcon sx={{ fontSize: 60, color: 'white' }} /> :
-                     index === 2 ? <DevicesIcon sx={{ fontSize: 60, color: 'white' }} /> :
-                     <MenuBookIcon sx={{ fontSize: 60, color: 'white' }} />}
-                  </Box>                  <Box 
-                    sx={{ 
-                      position: 'absolute',
-                      bottom: 10,
-                      right: 10,
-                      bgcolor: 'rgba(255,255,255,0.85)',
-                      py: 0.5,
-                      px: 1.5,
-                      borderRadius: 5,
-                      backdropFilter: 'blur(4px)',
-                      boxShadow: '0 2px 8px rgba(0,0,0,0.2)'
-                    }}
-                  >
-                    <Typography variant="caption" fontWeight="bold">
-                      {event.price}
-                    </Typography>
-                  </Box>
-                </Box>
-
-                <Box sx={{ p: 2, flexGrow: 1, display: 'flex', flexDirection: 'column' }}>
-                  <Typography variant="h6" fontWeight={600} sx={{ mb: 1, lineHeight: 1.3 }}>
-                    {event.title}
-                  </Typography>
-                  
-                  <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
-                    <CalendarMonthIcon sx={{ fontSize: 18, color: 'text.secondary', mr: 0.5 }} />
-                    <Typography variant="body2" color="text.secondary">
-                      {event.date}
-                    </Typography>
-                  </Box>
-                  
-                  <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
-                    <LocationOnIcon sx={{ fontSize: 18, color: 'text.secondary', mr: 0.5 }} />
-                    <Typography variant="body2" color="text.secondary">
-                      {event.location}
-                    </Typography>
-                  </Box>
-                    <Box sx={{ mt: 'auto', display: 'flex', gap: 1, flexDirection: 'column' }}>
-                    <Box sx={{ display: 'flex', gap: 1, mb: 1 }}>
-                      <Button 
-                        variant="outlined" 
-                        size="small" 
-                        fullWidth
-                        sx={{ borderRadius: 2 }}
-                      >
-                        Detalles
-                      </Button>
-                      <Button 
-                        variant="contained" 
-                        size="small" 
-                        fullWidth
-                        sx={{ borderRadius: 2 }}
-                      >
-                        Comprar
-                      </Button>
-                    </Box>
-                    <Button 
-                      variant="outlined" 
-                      color="secondary"
-                      size="small" 
-                      fullWidth
-                      startIcon={<LocationOnIcon />}
-                      onClick={() => handleOpenMapModal({
-                        title: event.title,
-                        location: event.location
-                      })}
-                      sx={{ borderRadius: 2 }}
-                    >
-                      Cómo llegar
-                    </Button>
-                  </Box>
-                </Box>
-              </Card>
-            </Grid>
-          ))}
-        </Grid>      </Box>
+        <Stack
+          direction={{ xs: 'column', sm: 'row' }}
+          spacing={3}
+          useFlexGap
+          flexWrap="wrap"
+        >
+          <EventList />
+        </Stack>
+      </Box>
       
       {/* Modal del Mapa */}
       {selectedEvent && (

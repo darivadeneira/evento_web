@@ -1,13 +1,12 @@
 import { useState } from 'react';
-import { 
-    useLogin, 
+import {
+    useLogin,
     useNotify,
     Form,
     TextInput,
     PasswordInput,
     required,
     Button,
-    Link,
     Title,
 } from 'react-admin';
 import {
@@ -17,10 +16,10 @@ import {
     CssBaseline,
     Typography
 } from '@mui/material';
-import { ThemeProvider} from '@mui/material/styles';
+import { ThemeProvider } from '@mui/material/styles';
 import HelpIcon from '@mui/icons-material/Help';
 import AddCircleOutlineIcon from '@mui/icons-material/AddCircleOutline';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link as RouterLink } from 'react-router-dom';
 import type { FieldValues } from 'react-hook-form';
 import { createLoginTheme } from '../../theme/loginTheme';
 
@@ -35,14 +34,16 @@ export const LoginPage = () => {
 
     const loginTheme = createLoginTheme('/mapa1.jpg');
 
+    const handleSignUp = () => navigate("/auth/signup");
+
     const handleSubmit = (formValues: FieldValues) => {
         setLoading(true);
-        login({ 
-            username: formValues.username as string, 
-            password: formValues.password as string 
+        login({
+            username: formValues.username as string,
+            password: formValues.password as string
         })
             .then(() => {
-                window.location.href = '/dashboard';
+                window.location.href = '/';
             })
             .catch((error) => {
                 // Captura el mensaje real del backend si existe
@@ -112,7 +113,7 @@ export const LoginPage = () => {
                     {/* Ícono de ticket y mensaje de bienvenida */}
                     <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', mb: 2 }}>
                         <img src="/Images/Logo.png" alt="Ticket Logo" style={{ width: 220, height: 150, filter: 'drop-shadow(0 2px 8px #7FA8FF88)' }} />
-        
+
                         <Typography variant="h4" component="h1" fontWeight="bold" color="primary">
                             Iniciar Sesión
                         </Typography>
@@ -177,14 +178,46 @@ export const LoginPage = () => {
                         </Box>
                     </Form>
                     <Box sx={{ mt: 3, display: 'flex', justifyContent: 'space-between', width: '100%' }}>
-                        <Link to="/auth/signup" sx={{ display: 'flex', alignItems: 'center', color: '#7FA8FF', fontWeight: 500, fontSize: '1rem', textDecoration: 'none', '&:hover': { textDecoration: 'underline' } }}>
+                        <RouterLink 
+                            to="/auth/signup"
+                            style={{ 
+                                display: 'flex', 
+                                alignItems: 'center', 
+                                color: '#7FA8FF', 
+                                fontWeight: 500, 
+                                fontSize: '1rem', 
+                                textDecoration: 'none'
+                            }}
+                            onMouseEnter={(e) => {
+                                e.currentTarget.style.textDecoration = 'underline';
+                            }}
+                            onMouseLeave={(e) => {
+                                e.currentTarget.style.textDecoration = 'none';
+                            }}
+                        >
                             <AddCircleOutlineIcon sx={{ mr: 0.5, fontSize: '1.1rem', color: '#7FA8FF' }} />
                             Crear cuenta
-                        </Link>
-                        <Link to="/auth/help" sx={{ display: 'flex', alignItems: 'center', color: '#7FA8FF', fontWeight: 500, fontSize: '1rem', textDecoration: 'none', '&:hover': { textDecoration: 'underline' } }}>
+                        </RouterLink>
+                        <RouterLink 
+                            to="/auth/help"
+                            style={{ 
+                                display: 'flex', 
+                                alignItems: 'center', 
+                                color: '#7FA8FF', 
+                                fontWeight: 500, 
+                                fontSize: '1rem', 
+                                textDecoration: 'none'
+                            }}
+                            onMouseEnter={(e) => {
+                                e.currentTarget.style.textDecoration = 'underline';
+                            }}
+                            onMouseLeave={(e) => {
+                                e.currentTarget.style.textDecoration = 'none';
+                            }}
+                        >
                             <HelpIcon sx={{ mr: 0.5, fontSize: '1.1rem', color: '#7FA8FF' }} />
                             Ayuda
-                        </Link>
+                        </RouterLink>
                     </Box>
                 </Card>
             </Box>
