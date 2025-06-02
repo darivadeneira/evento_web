@@ -26,7 +26,10 @@ const AppBarComponent = (props: any) => {
       color="primary"
       elevation={1}
       userMenu={<CustomUserMenu />}
-      toggleSidebar={false}
+      toggleSidebar={null}
+      sx={{
+        color: theme.palette.text.primary,
+      }}
     >
       <Box
         sx={{
@@ -44,7 +47,7 @@ const AppBarComponent = (props: any) => {
             style={{
               height: "40px",
               marginRight: "16px",
-              filter: "brightness(0) invert(1)", // Hace el logo blanco
+              filter: 'brightness(0) invert(1)',
             }}
           />
           {!isMobile && (
@@ -52,7 +55,7 @@ const AppBarComponent = (props: any) => {
               sx={{
                 fontSize: "1.5rem",
                 fontWeight: "bold",
-                color: "white",
+                color: theme.palette.text.primary,
               }}
             >
               EPAA
@@ -63,15 +66,31 @@ const AppBarComponent = (props: any) => {
         {/* Iconos de la derecha */}
         <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
           <Tooltip title="Notificaciones">
-            <IconButton color="inherit" size="small">
-              <Badge badgeContent={3} color="error">
+            <IconButton 
+              size="small"
+              sx={{ 
+                color: theme.palette.primary.main,
+                '&:hover': {
+                  backgroundColor: 'rgba(74, 255, 117, 0.08)',
+                }
+              }}
+            >
+              <Badge badgeContent={3} color="primary">
                 <NotificationsIcon />
               </Badge>
             </IconButton>
           </Tooltip>
 
           <Tooltip title="Configuración">
-            <IconButton color="inherit" size="small">
+            <IconButton 
+              size="small"
+              sx={{ 
+                color: theme.palette.primary.main,
+                '&:hover': {
+                  backgroundColor: 'rgba(74, 255, 117, 0.08)',
+                }
+              }}
+            >
               <SettingsIcon />
             </IconButton>
           </Tooltip>

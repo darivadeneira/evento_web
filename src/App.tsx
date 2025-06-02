@@ -9,6 +9,8 @@ import Dashboard from './components/Dashboard';
 import CustomLayout from './components/layout/Layout';
 import mainProvider from './providers/main.provider';
 import { EventList } from './components/events/EventList';
+import { alternativeTheme } from './theme/alternativeTheme';
+import { darkNeonTheme } from './theme/darkNeonTheme';
 
 function App() {
   return (
@@ -20,7 +22,7 @@ function App() {
             authProvider={authProvider}
             dataProvider={mainProvider}
             dashboard={Dashboard}
-            theme={customTheme}
+            theme={darkNeonTheme}
             layout={CustomLayout}
             loginPage={LoginPage}
             disableTelemetry
