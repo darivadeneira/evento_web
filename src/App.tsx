@@ -1,5 +1,5 @@
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
-import { Admin, Resource } from 'react-admin';
+import { Admin, Resource, CustomRoutes } from 'react-admin';
 import './App.css';
 import { SignUpPage } from './components/auth/SignUp';
 import { authProvider } from './providers/auth.provider';
@@ -11,13 +11,13 @@ import mainProvider from './providers/main.provider';
 import { EventList } from './components/events/EventList';
 import { alternativeTheme } from './theme/alternativeTheme';
 import { darkNeonTheme } from './theme/darkNeonTheme';
+import OrganizerEvents from './components/events/OrganizerEvents';
 
 function App() {
   return (
     <BrowserRouter>
       <Routes>
-        <Route path="/auth/signup" element={<SignUpPage />} />
-        <Route path="/*" element={
+        <Route path="/auth/signup" element={<SignUpPage />} />        <Route path="/*" element={
           <Admin
             authProvider={authProvider}
             dataProvider={mainProvider}
@@ -31,6 +31,9 @@ function App() {
               name="event-entity" 
               list={EventList}
             />
+            <CustomRoutes>
+              <Route path="/organizer-events" element={<OrganizerEvents />} />
+            </CustomRoutes>
           </Admin>
         } />
       </Routes>

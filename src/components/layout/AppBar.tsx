@@ -1,34 +1,90 @@
-import { Box, Button, useMediaQuery, Avatar, IconButton, Badge, Tooltip } from "@mui/material";
+import {
+  Box,
+  useMediaQuery,
+  Avatar,
+  IconButton,
+  Badge,
+  Tooltip,
+} from "@mui/material";
 import { useTheme } from "@mui/material/styles";
-import { AppBar as RaAppBar, UserMenu, Logout, useGetIdentity } from "react-admin";
-import NotificationsIcon from '@mui/icons-material/Notifications';
-import SettingsIcon from '@mui/icons-material/Settings';
+import {
+  AppBar as RaAppBar,
+  useGetIdentity,
+} from "react-admin";
+import NotificationsIcon from "@mui/icons-material/Notifications";
+import SettingsIcon from "@mui/icons-material/Settings";
+import { useState } from "react";
+import CustomUserMenu from "./CustomUserMenu";
 
-const CustomUserMenu = () => {
-  const { data: identity } = useGetIdentity();
-  const userName = identity?.fullName || 'Usuario';
+const AvatarComponent = ({ name, lastname }: { name: string; lastname: string }) => {
+  const initials = `${name?.charAt(0).toUpperCase()}${lastname?.charAt(0).toUpperCase()}`;
 
   return (
-    <UserMenu>
-      <Logout />
-    </UserMenu>
+    <Avatar
+      sx={{
+        bgcolor: "primary.main",
+        fontSize: "1rem", // Reduce el tamaño de las iniciales
+        cursor: "pointer", // Añade cursor pointer
+        "&:hover": {
+          bgcolor: "primary.dark", // Cambia el color de fondo al hacer hover
+        },
+      }}
+    >
+      {initials}
+    </Avatar>
+  );
+};
+
+const UserMenuTrigger = () => {
+  const [menuOpen, setMenuOpen] = useState(false);
+  const { data: identity, isLoading } = useGetIdentity();
+
+  const handleMenuOpen = () => {
+    setMenuOpen(true);
+  };
+
+  const handleMenuClose = () => {
+    setMenuOpen(false);
+  };
+
+  return (
+    <>
+      <div
+        style={{
+          cursor: "pointer",
+          display: "flex",
+          alignItems: "center",
+          gap: 8,
+        }}
+        onClick={handleMenuOpen}
+      >
+        <AvatarComponent name={identity?.name || ""} lastname={identity?.lastname || ""} />
+        {!isLoading && identity && `${identity.name} ${identity.lastname}`}
+      </div>
+      <CustomUserMenu 
+        open={menuOpen}
+        onClose={handleMenuClose}
+        name={identity?.name || ""}
+        lastname={identity?.lastname || ""}
+      />
+    </>
   );
 };
 
 const AppBarComponent = (props: any) => {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
-  const { data: identity } = useGetIdentity();
 
   return (
     <RaAppBar
       {...props}
       color="primary"
       elevation={1}
-      userMenu={<CustomUserMenu />}
+      userMenu={<UserMenuTrigger />}
       toggleSidebar={null}
       sx={{
         color: theme.palette.text.primary,
+        padding: "5px 10px",
       }}
     >
       <Box
@@ -47,7 +103,7 @@ const AppBarComponent = (props: any) => {
             style={{
               height: "40px",
               marginRight: "16px",
-              filter: 'brightness(0) invert(1)',
+              filter: "brightness(0) invert(1)",
             }}
           />
           {!isMobile && (
@@ -66,13 +122,13 @@ const AppBarComponent = (props: any) => {
         {/* Iconos de la derecha */}
         <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
           <Tooltip title="Notificaciones">
-            <IconButton 
+            <IconButton
               size="small"
-              sx={{ 
+              sx={{
                 color: theme.palette.primary.main,
-                '&:hover': {
-                  backgroundColor: 'rgba(74, 255, 117, 0.08)',
-                }
+                "&:hover": {
+                  backgroundColor: "rgba(74, 255, 117, 0.08)",
+                },
               }}
             >
               <Badge badgeContent={3} color="primary">
@@ -82,20 +138,18 @@ const AppBarComponent = (props: any) => {
           </Tooltip>
 
           <Tooltip title="Configuración">
-            <IconButton 
+            <IconButton
               size="small"
-              sx={{ 
+              sx={{
                 color: theme.palette.primary.main,
-                '&:hover': {
-                  backgroundColor: 'rgba(74, 255, 117, 0.08)',
-                }
+                "&:hover": {
+                  backgroundColor: "rgba(74, 255, 117, 0.08)",
+                },
               }}
             >
               <SettingsIcon />
             </IconButton>
           </Tooltip>
-
-          {/* El UserMenu se renderizará automáticamente aquí */}
         </Box>
       </Box>
     </RaAppBar>

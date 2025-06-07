@@ -9,6 +9,7 @@ import {
 import EventCard from './EventCard';
 import type { IEvent } from '../../types/event.type';
 
+
 const EventGrid = () => {
     const { data, isLoading } = useListContext();
     console.log("data", data);
