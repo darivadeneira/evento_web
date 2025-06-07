@@ -1,120 +1,523 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import {
   useNotify,
   Form,
   TextInput,
   PasswordInput,
-  required,
   Button,
   Title,
-  NumberInput,
   ResourceContextProvider,
   BooleanInput,
-  useAuthProvider,
 } from 'react-admin';
-import { Box, Card, CircularProgress, CssBaseline, Typography } from '@mui/material';
+import {
+  Box,
+  Card,
+  CircularProgress,
+  CssBaseline,
+  Typography,
+  Stepper,
+  Step,
+  StepLabel,
+  Link,
+  InputAdornment,
+  LinearProgress,
+  FormControlLabel,
+  Checkbox,
+  Alert,
+  IconButton,
+} from '@mui/material';
 import { ThemeProvider } from '@mui/material/styles';
 import ArrowBackSharpIcon from '@mui/icons-material/ArrowBackSharp';
-import { createLoginTheme } from '../../theme/loginTheme';
+import ArrowForwardIcon from '@mui/icons-material/ArrowForward';
+import EmailIcon from '@mui/icons-material/Email';
+import LockIcon from '@mui/icons-material/Lock';
+import VisibilityIcon from '@mui/icons-material/Visibility';
+import VisibilityOffIcon from '@mui/icons-material/VisibilityOff';
+import CheckCircleIcon from '@mui/icons-material/CheckCircle';
+import { darkNeonTheme } from '../../theme/darkNeonTheme';
 import { authProvider } from '../../providers/auth.provider';
+import {
+  calculatePasswordStrength,
+  getPasswordStrengthColor,
+  getPasswordStrengthText,
+  validateRequired,
+  validateEmail,
+  validateRegistrationForm,
+  mapErrorsToFields,
+} from '../../utils/registerUtils';
 
 export const SignUpPage = () => {
   const [loading, setLoading] = useState(false);
+  const [activeStep, setActiveStep] = useState(0);
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
-  const [generalErrors, setGeneralErrors] = useState<string[]>([]);
-  const [formValues, setFormValues] = useState<any>({});
+  const [formData, setFormData] = useState<any>({});
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [passwordStrength, setPasswordStrength] = useState(0);
+  const [termsAccepted, setTermsAccepted] = useState(false);
+  const [fieldValidation, setFieldValidation] = useState<Record<string, boolean>>({});
   const notify = useNotify();
+  const navigate = useNavigate();
 
-  const loginTheme = createLoginTheme('/mapa1.jpg');
+  const steps = ['Cuenta', 'Perfil'];
 
-  const validateForm = (values: any) => {
-    const errors: string[] = [];
-    if (!values.name || values.name.length < 2 || values.name.length > 30 || !/^[a-zA-Z]+$/.test(values.name)) {
-      errors.push('El nombre debe tener entre 2 y 30 caracteres');
-    }
-    if (
-      !values.lastname ||
-      values.lastname.length < 2 ||
-      values.lastname.length > 30 ||
-      !/^[a-zA-Z]+$/.test(values.lastname)
-    ) {
-      errors.push('El apellido debe tener entre 2 y 30 caracteres');
-    }
-    if (!values.username || values.username.length < 2 || values.username.length > 30) {
-      errors.push('El nombre de usuario debe tener entre 2 y 30 caracteres');
-    }
-    if (
-      !values.email ||
-      !/^[^@\s]+@[^@\s]+\.(com|net)$/i.test(values.email)
-    ) {
-      errors.push('Formato de correo electrónico inválido (solo .com o .net)');
-    }
-    if (!values.password || values.password.length < 6) {
-      errors.push('La contraseña debe tener al menos 6 caracteres');
-    }
-    if (!values.phone || values.phone.length !== 10 || !/^\d+$/.test(values.phone)) {
-      errors.push('El número telefónico debe tener 10 caracteres');
-    }
-    return errors;
-  };
-
-  // Función para mapear errores generales a campos
-  const mapGeneralErrorsToFields = (errors: string[]): Record<string, string> => {
-    const fieldMap: Record<string, string> = {};
-    errors.forEach((err) => {
-      if (err.toLowerCase().includes('nombre de usuario')) fieldMap.username = err;
-      else if (err.toLowerCase().includes('nombre')) fieldMap.name = err;
-      else if (err.toLowerCase().includes('apellido')) fieldMap.lastname = err;
-      else if (err.toLowerCase().includes('correo') || err.toLowerCase().includes('email')) fieldMap.email = err;
-      else if (err.toLowerCase().includes('contraseña')) fieldMap.password = err;
-      else if (err.toLowerCase().includes('tel')) fieldMap.phone = err;
-    });
-    return fieldMap;
-  };
-
-  // Limpiar errores de campo cuando el usuario corrige los datos
-  useEffect(() => {
-    if (Object.keys(fieldErrors).length > 0) {
-      const errors = validateForm(formValues);
-      setFieldErrors(mapGeneralErrorsToFields(errors));
-    }
-    // eslint-disable-next-line
-  }, [formValues]);
-
-  const handleSubmit = async (formValues: any) => {
-    setLoading(true);
+  const handleNext = (stepData: any) => {
+    const newFormData = { ...formData, ...stepData };
+    setFormData(newFormData);
     setFieldErrors({});
-    setGeneralErrors([]);
-    setFormValues(formValues); // Actualiza el estado para el efecto
-    const values = {
-      ...formValues,
-      rol: formValues.rol ? 'organizer' : 'user',
-    };
-    // Validación frontend
-    const frontendErrors = validateForm(values);
-    if (frontendErrors.length > 0) {
-      const mapped = mapGeneralErrorsToFields(frontendErrors);
-      setFieldErrors(mapped);
+
+    const validationResult = validateRegistrationForm(stepData, activeStep, termsAccepted);
+
+    if (!validationResult.isValid) {
+      setFieldErrors(mapErrorsToFields(validationResult.errors));
       notify('Corrige los errores del formulario.', { type: 'warning' });
-      setLoading(false);
       return;
     }
 
+    setFieldValidation((prev: Record<string, boolean>) => ({ ...prev, ...validationResult.fieldValidation }));
+
+    if (activeStep === 0) {
+      setActiveStep(1);
+    } else {
+      handleSubmit(newFormData);
+    }
+  };
+
+  const handleBack = () => {
+    setActiveStep(0);
+    setFieldErrors({});
+  };
+
+  const handleSubmit = async (finalData: any) => {
+    setLoading(true);
+    setFieldErrors({});
+
+    const values = {
+      ...finalData,
+      rol: finalData.rol ? 'organizer' : 'user',
+    };
+
     const response = await authProvider.signup(values);
-    if (response && response.status === 201) {
+    if (response?.status === 201) {
       notify(response.message || 'Cuenta creada con éxito', { type: 'info' });
-      window.location.href = '/login';
-    } else if (response && response.status !== 201) {
-      console.log('Error al crear la cuenta:', response.message);
-      notify(response.message || 'Error al crear la cuenta', { type: 'error' });
+      navigate('/login');
+    } else {
+      notify(response?.message || 'Error al crear la cuenta', { type: 'error' });
     }
 
     setLoading(false);
   };
 
+  const handlePasswordChange = (password: string) => {
+    setPasswordStrength(calculatePasswordStrength(password));
+    setFormData((prev: any) => ({ ...prev, password }));
+  };
+
+  const PasswordStrengthIndicator = () => {
+    if (!formData.password) return null;
+
+    return (
+      <Box sx={{ mt: 1 }}>
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+          <LinearProgress
+            variant="determinate"
+            value={passwordStrength}
+            sx={{
+              height: 6,
+              borderRadius: 3,
+              flex: 1,
+              backgroundColor: 'rgba(255, 255, 255, 0.1)',
+              '& .MuiLinearProgress-bar': {
+                backgroundColor: getPasswordStrengthColor(passwordStrength),
+              },
+            }}
+          />
+          <Typography
+            variant="caption"
+            sx={{ color: getPasswordStrengthColor(passwordStrength), fontWeight: 600 }}
+          >
+            {getPasswordStrengthText(passwordStrength)}
+          </Typography>
+        </Box>
+        {passwordStrength < 70 && (
+          <Typography
+            variant="caption"
+            sx={{ mt: 0.5, display: 'block', color: '#E0E0E0' }}
+          >
+            Usa al menos 8 caracteres con mayúsculas, minúsculas, números y símbolos
+          </Typography>
+        )}
+      </Box>
+    );
+  };
+
+  const ValidationIcon = ({ fieldName }: { fieldName: string }) => {
+    return fieldValidation[fieldName] ? (
+      <InputAdornment position="end">
+        <CheckCircleIcon sx={{ color: '#4AFF75' }} />
+      </InputAdornment>
+    ) : null;
+  };
+
+  // Estilos comunes para inputs
+  const inputStyles = {
+    '& .MuiOutlinedInput-root': {
+      borderRadius: 2,
+      backgroundColor: 'rgba(255, 255, 255, 0.05)',
+      '&.Mui-focused': {
+        backgroundColor: 'rgba(74, 255, 117, 0.05)',
+      },
+    },
+    '& .MuiFormHelperText-root': {
+      color: '#FF5252',
+      fontWeight: 500,
+    },
+    '& .MuiInputLabel-root.Mui-error': {
+      color: '#FF5252',
+    },
+    '& .MuiOutlinedInput-root.Mui-error .MuiOutlinedInput-notchedOutline': {
+      borderColor: '#FF5252',
+    },
+  };
+
+  const renderStepContent = (step: number) => {
+    switch (step) {
+      case 0:
+        return (
+          <Form onSubmit={handleNext}>
+            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+              <TextInput
+                source="email"
+                label="Correo electrónico"
+                fullWidth
+                disabled={loading}
+                autoFocus
+                validate={validateEmail}
+                helperText={fieldErrors.email}
+                error={!!fieldErrors.email}
+                defaultValue={formData.email}
+                slotProps={{
+                  input: {
+                    startAdornment: (
+                      <InputAdornment position="start">
+                        <EmailIcon sx={{ color: '#4AFF75' }} />
+                      </InputAdornment>
+                    ),
+                    endAdornment: <ValidationIcon fieldName="email" />,
+                  },
+                }}
+                sx={inputStyles}
+              />
+
+              <Box>
+                <PasswordInput
+                  source="password"
+                  label="Contraseña"
+                  fullWidth
+                  disabled={loading}
+                  validate={validateRequired('La contraseña es requerida')}
+                  helperText={fieldErrors.password}
+                  error={!!fieldErrors.password}
+                  defaultValue={formData.password}
+                  slotProps={{
+                    input: {
+                      startAdornment: (
+                        <InputAdornment position="start">
+                          <LockIcon sx={{ color: '#4AFF75' }} />
+                        </InputAdornment>
+                      ),
+                      endAdornment: (
+                        <InputAdornment position="end">
+                          <IconButton
+                            onClick={() => setShowPassword(!showPassword)}
+                            edge="end"
+                            size="small"
+                            sx={{ color: '#E0E0E0' }}
+                          >
+                            {showPassword ? <VisibilityOffIcon /> : <VisibilityIcon />}
+                          </IconButton>
+                          <ValidationIcon fieldName="password" />
+                        </InputAdornment>
+                      ),
+                    },
+                  }}
+                  type={showPassword ? 'text' : 'password'}
+                  onChange={(e) => handlePasswordChange(e.target.value)}
+                  sx={inputStyles}
+                />
+                <PasswordStrengthIndicator />
+              </Box>
+
+              <PasswordInput
+                source="confirmPassword"
+                label="Confirmar Contraseña"
+                fullWidth
+                disabled={loading}
+                validate={validateRequired('La confirmación de contraseña es requerida')}
+                helperText={fieldErrors.confirmPassword}
+                error={!!fieldErrors.confirmPassword}
+                defaultValue={formData.confirmPassword}
+                slotProps={{
+                  input: {
+                    startAdornment: (
+                      <InputAdornment position="start">
+                        <LockIcon sx={{ color: '#4AFF75' }} />
+                      </InputAdornment>
+                    ),
+                    endAdornment: (
+                      <InputAdornment position="end">
+                        <IconButton
+                          onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                          edge="end"
+                          size="small"
+                          sx={{ color: '#E0E0E0' }}
+                        >
+                          {showConfirmPassword ? <VisibilityOffIcon /> : <VisibilityIcon />}
+                        </IconButton>
+                        <ValidationIcon fieldName="confirmPassword" />
+                      </InputAdornment>
+                    ),
+                  },
+                }}
+                type={showConfirmPassword ? 'text' : 'password'}
+                sx={inputStyles}
+              />
+
+              <FormControlLabel
+                control={
+                  <Checkbox
+                    checked={termsAccepted}
+                    onChange={(e) => setTermsAccepted(e.target.checked)}
+                    sx={{
+                      color: '#4AFF75',
+                      '&.Mui-checked': {
+                        color: '#4AFF75',
+                      },
+                    }}
+                  />
+                }
+                label={
+                  <Typography
+                    variant="body2"
+                    sx={{ color: '#E0E0E0' }}
+                  >
+                    Acepto los{' '}
+                    <Link
+                      href="#"
+                      sx={{ color: '#4AFF75', textDecoration: 'none', '&:hover': { textDecoration: 'underline' } }}
+                    >
+                      términos y condiciones
+                    </Link>{' '}
+                    y la{' '}
+                    <Link
+                      href="#"
+                      sx={{ color: '#4AFF75', textDecoration: 'none', '&:hover': { textDecoration: 'underline' } }}
+                    >
+                      política de privacidad
+                    </Link>
+                  </Typography>
+                }
+              />
+
+              <Button
+                variant="contained"
+                type="submit"
+                disabled={loading || !termsAccepted}
+                fullWidth
+                endIcon={<ArrowForwardIcon />}
+                sx={{
+                  py: 1.5,
+                  mt: 2,
+                  fontWeight: 600,
+                  borderRadius: 2,
+                  backgroundColor: '#4AFF75',
+                  color: '#000000',
+                  textTransform: 'none',
+                  '&:hover': {
+                    backgroundColor: '#7FFF9C',
+                  },
+                  '&:disabled': {
+                    backgroundColor: '#333333',
+                    color: '#666666',
+                  },
+                }}
+              >
+                Continuar
+              </Button>
+            </Box>
+          </Form>
+        );
+
+      case 1:
+        return (
+          <Form onSubmit={handleNext}>
+            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+              <Alert
+                severity="info"
+                sx={{
+                  mb: 2,
+                  backgroundColor: 'rgba(74, 255, 117, 0.1)',
+                  border: '1px solid #4AFF75',
+                  '& .MuiAlert-icon': {
+                    color: '#4AFF75',
+                  },
+                  '& .MuiAlert-message': {
+                    color: '#FFFFFF',
+                  },
+                }}
+              >
+                <Typography variant="body2">Completa tu perfil para personalizar tu experiencia</Typography>
+              </Alert>
+
+              <Box sx={{ display: 'flex', gap: 2 }}>
+                <TextInput
+                  source="name"
+                  label="Nombre"
+                  fullWidth
+                  disabled={loading}
+                  autoFocus
+                  validate={validateRequired('El nombre es requerido')}
+                  helperText={fieldErrors.name}
+                  error={!!fieldErrors.name}
+                  defaultValue={formData.name}
+                  slotProps={{
+                    input: {
+                      endAdornment: <ValidationIcon fieldName="name" />,
+                    },
+                  }}
+                  sx={{ ...inputStyles, flex: 1 }}
+                />
+                <TextInput
+                  source="lastname"
+                  label="Apellido"
+                  fullWidth
+                  disabled={loading}
+                  validate={validateRequired('El apellido es requerido')}
+                  helperText={fieldErrors.lastname}
+                  error={!!fieldErrors.lastname}
+                  defaultValue={formData.lastname}
+                  slotProps={{
+                    input: {
+                      endAdornment: <ValidationIcon fieldName="lastname" />,
+                    },
+                  }}
+                  sx={{ ...inputStyles, flex: 1 }}
+                />
+              </Box>
+
+              <TextInput
+                source="username"
+                label="Nombre de usuario"
+                fullWidth
+                disabled={loading}
+                validate={validateRequired('El nombre de usuario es requerido')}
+                helperText={fieldErrors.username}
+                error={!!fieldErrors.username}
+                defaultValue={formData.username}
+                slotProps={{
+                  input: {
+                    endAdornment: <ValidationIcon fieldName="username" />,
+                  },
+                }}
+                sx={inputStyles}
+              />
+
+              <TextInput
+                source="phone"
+                label="Teléfono"
+                fullWidth
+                disabled={loading}
+                validate={validateRequired('El teléfono es requerido')}
+                helperText={fieldErrors.phone}
+                error={!!fieldErrors.phone}
+                defaultValue={formData.phone}
+                placeholder="+593 999 123 456"
+                slotProps={{
+                  input: {
+                    endAdornment: <ValidationIcon fieldName="phone" />,
+                  },
+                }}
+                sx={inputStyles}
+              />
+
+              <Box sx={{ pl: 1 }}>
+                <BooleanInput
+                  source="rol"
+                  label="¿Eres organizador de eventos?"
+                  disabled={loading}
+                  defaultValue={formData.rol}
+                />
+              </Box>
+
+              <Box sx={{ display: 'flex', gap: 2, mt: 2 }}>
+                <Button
+                  variant="outlined"
+                  onClick={handleBack}
+                  disabled={loading}
+                  startIcon={<ArrowBackSharpIcon />}
+                  sx={{
+                    py: 1.5,
+                    fontWeight: 600,
+                    borderRadius: 2,
+                    textTransform: 'none',
+                    borderColor: '#4AFF75',
+                    color: '#4AFF75',
+                    '&:hover': {
+                      borderColor: '#7FFF9C',
+                      backgroundColor: 'rgba(74, 255, 117, 0.08)',
+                    },
+                  }}
+                >
+                  Atrás
+                </Button>
+                <Button
+                  variant="contained"
+                  type="submit"
+                  disabled={loading}
+                  fullWidth
+                  sx={{
+                    py: 1.5,
+                    fontWeight: 600,
+                    borderRadius: 2,
+                    backgroundColor: '#4AFF75',
+                    color: '#000000',
+                    textTransform: 'none',
+                    '&:hover': {
+                      backgroundColor: '#7FFF9C',
+                    },
+                    '&:disabled': {
+                      backgroundColor: '#333333',
+                      color: '#666666',
+                    },
+                  }}
+                >
+                  {loading ? (
+                    <>
+                      <CircularProgress
+                        size={18}
+                        thickness={2}
+                        sx={{ mr: 1, color: '#000000' }}
+                      />
+                      Creando cuenta...
+                    </>
+                  ) : (
+                    'Crear cuenta'
+                  )}
+                </Button>
+              </Box>
+            </Box>
+          </Form>
+        );
+
+      default:
+        return null;
+    }
+  };
+
   return (
     <ResourceContextProvider value="signup">
-      <ThemeProvider theme={loginTheme}>
+      <ThemeProvider theme={darkNeonTheme}>
         <CssBaseline />
         <Box
           display="flex"
@@ -122,236 +525,95 @@ export const SignUpPage = () => {
           alignItems="center"
           justifyContent="center"
           sx={{
-            position: 'fixed',
-            top: 0,
-            left: 0,
-            width: '100vw',
-            height: '100vh',
             minHeight: '100vh',
-            minWidth: '100vw',
-            zIndex: 0,
-            overflow: 'auto', // Permite scroll solo si es necesario
-            m: 0,
-            p: 0,
-            background: 'url("/Images/Background.jpg") center/cover no-repeat',
-            '&:before': {
-              content: '""',
-              position: 'absolute',
-              top: 0,
-              left: 0,
-              width: '100vw',
-              height: '100vh',
-              background: 'rgba(34,40,49,0.55)',
-              backdropFilter: 'blur(8px)',
-              zIndex: 1,
-            },
+            background: '#000000',
+            py: 4,
           }}
         >
-          <Title title="Crear cuenta" />
+          <Title title="Crear una Cuenta" />
           <Card
             sx={{
-              minWidth: 300,
-              maxWidth: 450,
-              width: { xs: '95vw', sm: 400, md: 450 },
-              p: 2,
-              borderRadius: 4,
-              boxShadow: '0 8px 32px 0 rgba(31, 38, 135, 0.37)',
-              background: 'rgba(255,255,255,0.85)',
-              zIndex: 2,
-              display: 'flex',
-              flexDirection: 'column',
-              alignItems: 'center',
-              border: '2px solid',
-              borderColor: '#7FA8FF',
-              mx: 'auto',
-              my: 4,
-              maxHeight: '95vh',
-              overflowY: 'none',
+              minWidth: 350,
+              maxWidth: 500,
+              width: { xs: '90vw', sm: 450 },
+              p: 4,
+              borderRadius: 3,
+              boxShadow: '0 8px 32px rgba(74, 255, 117, 0.2)',
+              background: '#0A0A0A',
+              border: '1px solid rgba(74, 255, 117, 0.3)',
             }}
           >
-            <Box sx={{ display: 'flex', flexDirection: 'row', alignItems: 'center', mb: 2, width: '100%' }}>
-              <Button
-                sx={{ minWidth: 0, p: 0, mr: 1, background: 'none', boxShadow: 'none' }}
-                onClick={() => (window.location.href = '/login')}
+            {/* Header */}
+            <Box sx={{ textAlign: 'center', mb: 4 }}>
+              <Typography
+                variant="h4"
+                component="h1"
+                fontWeight="bold"
+                sx={{ mb: 1, color: '#FFFFFF' }}
               >
-                <ArrowBackSharpIcon sx={{ color: '#7FA8FF', fontSize: 32 }} />
-              </Button>
-              <Typography variant="h5" component="h1" fontWeight="bold" color="primary" sx={{ flex: 1, textAlign: 'center' }}>
-                Crear Cuenta
+                Crear una Cuenta
               </Typography>
-            </Box>
-            <Form onSubmit={handleSubmit}>
-              <Box sx={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-                <Box sx={{ display: 'flex', gap: '1rem' }}>
-                  <Box sx={{ flex: 1 }}>
-                    <TextInput
-                      source="name"
-                      label="Nombre"
-                      fullWidth
-                      disabled={loading}
-                      autoFocus
-                      validate={required()}
-                      helperText={fieldErrors.name}
-                      error={!!fieldErrors.name}
-                      sx={
-                        fieldErrors.name
-                          ? {
-                              '& .RaLabeled-label': { color: 'error.main' },
-                              '& .MuiFormHelperText-root': { color: 'error.main' },
-                            }
-                          : {}
-                      }
-                      onChange={(e) => setFormValues((prev: any) => ({ ...prev, name: e.target.value }))}
-                    />
-                  </Box>
-                  <Box sx={{ flex: 1 }}>
-                    <TextInput
-                      source="lastname"
-                      label="Apellido"
-                      fullWidth
-                      disabled={loading}
-                      validate={required()}
-                      helperText={fieldErrors.lastname}
-                      error={!!fieldErrors.lastname}
-                      sx={
-                        fieldErrors.lastname
-                          ? {
-                              '& .RaLabeled-label': { color: 'error.main' },
-                              '& .MuiFormHelperText-root': { color: 'error.main' },
-                            }
-                          : {}
-                      }
-                      onChange={(e) => setFormValues((prev: any) => ({ ...prev, lastname: e.target.value }))}
-                    />
-                  </Box>
-                </Box>
-
-                <TextInput
-                  source="username"
-                  label="Usuario"
-                  fullWidth
-                  disabled={loading}
-                  validate={required()}
-                  helperText={fieldErrors.username}
-                  error={!!fieldErrors.username}
-                  sx={
-                    fieldErrors.username
-                      ? {
-                          '& .RaLabeled-label': { color: 'error.main' },
-                          '& .MuiFormHelperText-root': { color: 'error.main' },
-                        }
-                      : {}
-                  }
-                  onChange={(e) => setFormValues((prev: any) => ({ ...prev, username: e.target.value }))}
-                />
-
-                <PasswordInput
-                  source="password"
-                  label="Contraseña"
-                  fullWidth
-                  disabled={loading}
-                  validate={required()}
-                  helperText={fieldErrors.password}
-                  error={!!fieldErrors.password}
-                  sx={
-                    fieldErrors.password
-                      ? {
-                          '& .RaLabeled-label': { color: 'error.main' },
-                          '& .MuiFormHelperText-root': { color: 'error.main' },
-                        }
-                      : {}
-                  }
-                  onChange={(e) => setFormValues((prev: any) => ({ ...prev, password: e.target.value }))}
-                />
-
-                <TextInput
-                  source="email"
-                  label="Email"
-                  fullWidth
-                  disabled={loading}
-                  validate={required()}
-                  helperText={fieldErrors.email}
-                  error={!!fieldErrors.email}
-                  sx={
-                    fieldErrors.email
-                      ? {
-                          '& .RaLabeled-label': { color: 'error.main' },
-                          '& .MuiFormHelperText-root': { color: 'error.main' },
-                        }
-                      : {}
-                  }
-                  onChange={(e) => setFormValues((prev: any) => ({ ...prev, email: e.target.value }))}
-                />
-
-                <TextInput
-                  source="phone"
-                  label="Celular"
-                  fullWidth
-                  disabled={loading}
-                  validate={required()}
-                  helperText={fieldErrors.phone}
-                  error={!!fieldErrors.phone}
-                  sx={
-                    fieldErrors.phone
-                      ? {
-                          '& .RaLabeled-label': { color: 'error.main' },
-                          '& .MuiFormHelperText-root': { color: 'error.main' },
-                        }
-                      : {}
-                  }
-                  onChange={(e) => setFormValues((prev: any) => ({ ...prev, phone: e.target.value }))}
-                />
-
-                <BooleanInput
-                  source="rol"
-                  label="¿Eres organizador de eventos?"
-                  disabled={loading}
-                  helperText={fieldErrors.rol}
-                  sx={
-                    fieldErrors.rol
-                      ? {
-                          '& .RaLabeled-label': { color: 'error.main' },
-                          '& .MuiFormHelperText-root': { color: 'error.main' },
-                        }
-                      : {}
-                  }
-                  onChange={(e) => setFormValues((prev: any) => ({ ...prev, rol: e.target.checked }))}
-                />
-              </Box>
-              <Box sx={{ padding: '1em 0 0 0' }}>
-                <Button
-                  variant="contained"
-                  type="submit"
-                  disabled={loading}
-                  fullWidth
-                  color="primary"
+              <Typography
+                variant="body2"
+                sx={{ color: '#E0E0E0' }}
+              >
+                ¿Ya tienes una cuenta?{' '}
+                <Link
+                  component="button"
+                  variant="body2"
+                  onClick={() => navigate('/login')}
                   sx={{
-                    py: 1.5,
-                    fontWeight: 600,
-                    fontSize: { xs: '1rem', sm: '1.1rem' },
-                    borderRadius: 3,
-                    minHeight: 48,
-                    boxShadow: '0 2px 8px rgba(31, 38, 135, 0.15)',
-                    transition: 'background 0.3s',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    backgroundColor: '#7FA8FF', // color igual en mobile y pc
+                    color: '#4AFF75',
+                    textDecoration: 'none',
+                    fontWeight: 500,
                     '&:hover': {
-                      backgroundColor: '#5A7FFF',
+                      textDecoration: 'underline',
                     },
-                    mx: { xs: 'auto', sm: 0 }, // centrado en mobile
-                    width: { xs: '80%', sm: '100%' },
                   }}
                 >
-                  {loading ? (
-                    <CircularProgress size={18} thickness={2} sx={{ mr: 1 }} />
-                  ) : (
-                    'Crear cuenta'
-                  )}
-                </Button>
-              </Box>
-            </Form>
+                  Iniciar sesión
+                </Link>
+              </Typography>
+            </Box>
+
+            {/* Stepper */}
+            <Stepper
+              activeStep={activeStep}
+              sx={{ mb: 4 }}
+            >
+              {steps.map((label, index) => (
+                <Step key={label}>
+                  <StepLabel
+                    slotProps={{
+                      stepIcon: {
+                        sx: {
+                          '&.Mui-active': {
+                            color: '#4AFF75',
+                          },
+                          '&.Mui-completed': {
+                            color: '#4AFF75',
+                          },
+                          color: '#666666',
+                        },
+                      },
+                    }}
+                  >
+                    <Typography
+                      variant="caption"
+                      sx={{
+                        color: activeStep >= index ? '#4AFF75' : '#666666',
+                        fontWeight: activeStep >= index ? 600 : 400,
+                      }}
+                    >
+                      {label}
+                    </Typography>
+                  </StepLabel>
+                </Step>
+              ))}
+            </Stepper>
+
+            {/* Step Content */}
+            {renderStepContent(activeStep)}
           </Card>
         </Box>
       </ThemeProvider>
