@@ -18,6 +18,8 @@ import {
   LinearProgress,
   IconButton,
   Badge,
+  Snackbar,
+  Alert,
 } from '@mui/material';
 import { useTheme } from '@mui/material/styles';
 import { useGetIdentity } from 'react-admin';
@@ -74,6 +76,7 @@ const OrganizerEvents: React.FC = () => {
   const [events, setEvents] = useState<IEvent[]>([]);
   const [loading, setLoading] = useState(false);
   const [createModalOpen, setCreateModalOpen] = useState(false);
+  const [eventCreatedSnackbar, setEventCreatedSnackbar] = useState(false);
 
   const initials = identity
     ? `${identity?.name?.charAt(0).toUpperCase()}${identity?.lastname?.charAt(0).toUpperCase()}`
@@ -116,10 +119,22 @@ const OrganizerEvents: React.FC = () => {
   };
 
   const handleEventCreated = () => {
-    // Recargar la lista de eventos después de crear uno nuevo
-    if (tabValue === 1) {
-      fetchOrganizerEvents();
+    // Mostrar notificación
+    setEventCreatedSnackbar(true);
+
+    // Cambiar a la pestaña de eventos si no está ya ahí
+    if (tabValue !== 1) {
+      setTabValue(1);
     }
+
+    // Recargar la lista de eventos después de crear uno nuevo
+    setTimeout(() => {
+      fetchOrganizerEvents();
+    }, 500);
+  };
+
+  const handleEventCreatedSnackbarClose = () => {
+    setEventCreatedSnackbar(false);
   };
 
   // Métricas simuladas - en el futuro vienen de la API
@@ -896,6 +911,28 @@ const OrganizerEvents: React.FC = () => {
           onClose={() => setCreateModalOpen(false)}
           onEventCreated={handleEventCreated}
         />
+
+        {/* Snackbar de confirmación adicional */}
+        <Snackbar
+          open={eventCreatedSnackbar}
+          autoHideDuration={4000}
+          onClose={handleEventCreatedSnackbarClose}
+          anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
+        >
+          <Alert
+            onClose={handleEventCreatedSnackbarClose}
+            severity="success"
+            variant="filled"
+            sx={{
+              width: '100%',
+              borderRadius: 2,
+              fontWeight: 600,
+              boxShadow: '0 8px 32px rgba(74, 255, 117, 0.3)',
+            }}
+          >
+            ✅ Tu evento ya está disponible en la plataforma
+          </Alert>
+        </Snackbar>
       </Container>
     </Box>
   );

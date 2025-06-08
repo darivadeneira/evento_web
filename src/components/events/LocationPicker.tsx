@@ -2,7 +2,6 @@ import React, { useState } from 'react';
 import { Box, Paper, Typography, Button, Alert } from '@mui/material';
 import { useTheme } from '@mui/material/styles';
 import LocationOnIcon from '@mui/icons-material/LocationOn';
-import MyLocationIcon from '@mui/icons-material/MyLocation';
 import ClearIcon from '@mui/icons-material/Clear';
 import LocationPickerMap from './LocationPickerMap';
 
@@ -13,49 +12,13 @@ interface LocationPickerProps {
 
 const LocationPicker: React.FC<LocationPickerProps> = ({ onLocationSelect, selectedLocation }) => {
   const theme = useTheme();
-  const [error, setError] = useState('');
-
-  const getCurrentLocation = () => {
-    setError('');
-
-    if (!navigator.geolocation) {
-      setError('La geolocalización no está soportada en este navegador');
-      return;
-    }
-
-    navigator.geolocation.getCurrentPosition(
-      (position) => {
-        const coords: [number, number] = [position.coords.longitude, position.coords.latitude];
-        onLocationSelect(coords);
-      },
-      (error) => {
-        console.error('Error getting location:', error);
-        setError('No se pudo obtener la ubicación actual');
-      },
-      {
-        enableHighAccuracy: true,
-        timeout: 10000,
-        maximumAge: 0,
-      },
-    );
-  };
 
   const clearSelection = () => {
     onLocationSelect([0, 0]);
-    setError('');
   };
 
   return (
     <Box>
-      {error && (
-        <Alert
-          severity="warning"
-          sx={{ mb: 2, borderRadius: 2 }}
-        >
-          {error}
-        </Alert>
-      )}
-
       <Typography
         variant="h6"
         sx={{ mb: 2, display: 'flex', alignItems: 'center', gap: 1 }}
@@ -101,27 +64,8 @@ const LocationPicker: React.FC<LocationPickerProps> = ({ onLocationSelect, selec
         </Alert>
       )}
 
-      <Box sx={{ display: 'flex', gap: 2, flexWrap: 'wrap' }}>
-        <Button
-          variant="outlined"
-          startIcon={<MyLocationIcon />}
-          onClick={getCurrentLocation}
-          sx={{
-            borderRadius: 2,
-            textTransform: 'none',
-            fontWeight: 600,
-            borderColor: theme.palette.primary.main,
-            color: theme.palette.primary.main,
-            '&:hover': {
-              borderColor: theme.palette.primary.light,
-              backgroundColor: 'rgba(74, 255, 117, 0.08)',
-            },
-          }}
-        >
-          Usar mi ubicación actual
-        </Button>
-
-        {selectedLocation && selectedLocation[0] !== 0 && selectedLocation[1] !== 0 && (
+      {selectedLocation && selectedLocation[0] !== 0 && selectedLocation[1] !== 0 && (
+        <Box sx={{ display: 'flex', justifyContent: 'center' }}>
           <Button
             variant="text"
             startIcon={<ClearIcon />}
@@ -139,8 +83,8 @@ const LocationPicker: React.FC<LocationPickerProps> = ({ onLocationSelect, selec
           >
             Limpiar selección
           </Button>
-        )}
-      </Box>
+        </Box>
+      )}
 
       <Typography
         variant="caption"

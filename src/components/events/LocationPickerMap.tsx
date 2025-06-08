@@ -66,8 +66,9 @@ interface LocationPickerMapProps {
 }
 
 const LocationPickerMap: React.FC<LocationPickerMapProps> = ({ selectedLocation, onLocationSelect, height = 300 }) => {
-  const [mapCenter, setMapCenter] = useState<[number, number]>([-0.1807, -78.4678]); // Quito como centro por defecto
-  const [mapKey, setMapKey] = useState(0); // Para forzar re-render del mapa
+  // Centro por defecto en Quito, Ecuador
+  const [mapCenter] = useState<[number, number]>([-0.1807, -78.4678]);
+  const [mapKey, setMapKey] = useState(0);
 
   useEffect(() => {
     fixLeafletIcon();
@@ -76,21 +77,7 @@ const LocationPickerMap: React.FC<LocationPickerMapProps> = ({ selectedLocation,
   useEffect(() => {
     // Si hay una ubicación seleccionada, centrar el mapa en ella
     if (selectedLocation && selectedLocation[0] !== 0 && selectedLocation[1] !== 0) {
-      setMapCenter([selectedLocation[1], selectedLocation[0]]); // Convertir a [lat, lng] para el mapa
-      setMapKey((prev) => prev + 1); // Forzar re-render
-    } else {
-      // Intentar obtener la ubicación del usuario
-      if (navigator.geolocation) {
-        navigator.geolocation.getCurrentPosition(
-          (position) => {
-            setMapCenter([position.coords.latitude, position.coords.longitude]);
-            setMapKey((prev) => prev + 1);
-          },
-          () => {
-            // Mantener Quito como centro por defecto si falla
-          },
-        );
-      }
+      setMapKey((prev) => prev + 1); // Forzar re-render para actualizar centro
     }
   }, [selectedLocation]);
 
@@ -98,11 +85,17 @@ const LocationPickerMap: React.FC<LocationPickerMapProps> = ({ selectedLocation,
     onLocationSelect(coords);
   };
 
+  // Determinar el centro del mapa
+  const currentCenter =
+    selectedLocation && selectedLocation[0] !== 0 && selectedLocation[1] !== 0
+      ? ([selectedLocation[1], selectedLocation[0]] as [number, number]) // [lat, lng] para el mapa
+      : mapCenter;
+
   return (
     <div style={{ height: `${height}px`, width: '100%', borderRadius: '8px', overflow: 'hidden' }}>
       <MapContainer
         key={mapKey}
-        center={mapCenter}
+        center={currentCenter}
         zoom={13}
         style={{ height: '100%', width: '100%' }}
         zoomControl={true}
