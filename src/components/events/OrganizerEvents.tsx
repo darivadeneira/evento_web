@@ -189,41 +189,14 @@ const OrganizerEvents: React.FC = () => {
         <Card
           sx={{
             mb: 4,
-            background: `linear-gradient(135deg, rgba(74, 255, 117, 0.1) 0%, rgba(74, 255, 117, 0.05) 100%)`,
-            border: `1px solid rgba(74, 255, 117, 0.3)`,
+            background: theme.palette.background.paper,
+            border: `1px solid ${theme.palette.divider}`,
             borderRadius: 3,
             position: 'relative',
             overflow: 'hidden',
-            backdropFilter: 'blur(10px)',
-            boxShadow: '0 8px 32px rgba(74, 255, 117, 0.1)',
+            boxShadow: theme.shadows[2],
           }}
         >
-          {/* Decorative Elements */}
-          <Box
-            sx={{
-              position: 'absolute',
-              top: -50,
-              right: -50,
-              width: 150,
-              height: 150,
-              borderRadius: '50%',
-              background: `radial-gradient(circle, rgba(74, 255, 117, 0.1) 0%, transparent 70%)`,
-              filter: 'blur(20px)',
-            }}
-          />
-          <Box
-            sx={{
-              position: 'absolute',
-              bottom: -30,
-              left: -30,
-              width: 100,
-              height: 100,
-              borderRadius: '50%',
-              background: `radial-gradient(circle, rgba(74, 255, 117, 0.08) 0%, transparent 70%)`,
-              filter: 'blur(15px)',
-            }}
-          />
-
           <CardContent sx={{ p: 4, position: 'relative', zIndex: 1 }}>
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 4 }}>
               <Box sx={{ position: 'relative' }}>
@@ -235,8 +208,6 @@ const OrganizerEvents: React.FC = () => {
                     fontSize: '2.5rem',
                     fontWeight: 'bold',
                     border: `3px solid ${theme.palette.background.paper}`,
-                    boxShadow: `0 0 20px rgba(74, 255, 117, 0.4)`,
-                    position: 'relative',
                   }}
                 >
                   {initials}
@@ -287,28 +258,19 @@ const OrganizerEvents: React.FC = () => {
                   <Chip
                     icon={<PersonIcon />}
                     label={identity?.role || 'Organizador'}
+                    color="primary"
                     sx={{
-                      bgcolor: theme.palette.primary.main,
-                      color: theme.palette.primary.contrastText,
                       fontWeight: 700,
                       px: 1,
-                      '& .MuiChip-icon': {
-                        color: theme.palette.primary.contrastText,
-                      },
-                      boxShadow: '0 4px 12px rgba(74, 255, 117, 0.3)',
                     }}
                   />
                   <Chip
                     icon={<EventAvailableIcon />}
                     label={`${metrics.activeEvents} Eventos Activos`}
+                    variant="outlined"
+                    color="primary"
                     sx={{
-                      bgcolor: 'rgba(74, 255, 117, 0.1)',
-                      color: theme.palette.primary.main,
                       fontWeight: 600,
-                      border: `1px solid rgba(74, 255, 117, 0.3)`,
-                      '& .MuiChip-icon': {
-                        color: theme.palette.primary.main,
-                      },
                     }}
                   />
                 </Box>
@@ -345,32 +307,10 @@ const OrganizerEvents: React.FC = () => {
               </Box>
 
               <Box sx={{ display: 'flex', gap: 1 }}>
-                <IconButton
-                  sx={{
-                    bgcolor: 'rgba(74, 255, 117, 0.1)',
-                    border: `1px solid rgba(74, 255, 117, 0.3)`,
-                    color: theme.palette.primary.main,
-                    '&:hover': {
-                      bgcolor: 'rgba(74, 255, 117, 0.2)',
-                      transform: 'scale(1.05)',
-                    },
-                    transition: 'all 0.2s ease',
-                  }}
-                >
+                <IconButton color="primary">
                   <EditIcon />
                 </IconButton>
-                <IconButton
-                  sx={{
-                    bgcolor: 'rgba(74, 255, 117, 0.1)',
-                    border: `1px solid rgba(74, 255, 117, 0.3)`,
-                    color: theme.palette.primary.main,
-                    '&:hover': {
-                      bgcolor: 'rgba(74, 255, 117, 0.2)',
-                      transform: 'scale(1.05)',
-                    },
-                    transition: 'all 0.2s ease',
-                  }}
-                >
+                <IconButton color="primary">
                   <VisibilityIcon />
                 </IconButton>
               </Box>
@@ -423,8 +363,8 @@ const OrganizerEvents: React.FC = () => {
             >
               <Card
                 sx={{
-                  background: `linear-gradient(135deg, rgba(74, 255, 117, 0.05) 0%, ${theme.palette.background.paper} 100%)`,
-                  border: `1px solid rgba(74, 255, 117, 0.2)`,
+                  background: theme.palette.background.paper,
+                  border: `1px solid ${theme.palette.divider}`,
                   borderRadius: 2,
                   p: 2.5,
                   height: '100%',
@@ -433,30 +373,17 @@ const OrganizerEvents: React.FC = () => {
                   transition: 'all 0.3s ease',
                   '&:hover': {
                     transform: 'translateY(-4px)',
-                    boxShadow: '0 12px 24px rgba(74, 255, 117, 0.15)',
-                    border: `1px solid rgba(74, 255, 117, 0.4)`,
+                    boxShadow: theme.shadows[4],
+                    borderColor: theme.palette.primary.main,
                   },
                 }}
               >
-                <Box
-                  sx={{
-                    position: 'absolute',
-                    top: -20,
-                    right: -20,
-                    width: 60,
-                    height: 60,
-                    borderRadius: '50%',
-                    background: `radial-gradient(circle, ${metric.color}20 0%, transparent 70%)`,
-                    filter: 'blur(10px)',
-                  }}
-                />
-
                 <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 2 }}>
                   <Box
                     sx={{
                       p: 1.5,
                       borderRadius: 2,
-                      bgcolor: `${metric.color}15`,
+                      bgcolor: `${metric.color}1A`,
                       color: metric.color,
                       display: 'flex',
                       alignItems: 'center',
@@ -469,8 +396,8 @@ const OrganizerEvents: React.FC = () => {
                     label={metric.change}
                     size="small"
                     sx={{
-                      bgcolor: 'rgba(74, 255, 117, 0.1)',
-                      color: theme.palette.primary.main,
+                      bgcolor: theme.palette.action.hover,
+                      color: theme.palette.text.secondary,
                       fontWeight: 600,
                       fontSize: '0.75rem',
                     }}
@@ -504,15 +431,14 @@ const OrganizerEvents: React.FC = () => {
           sx={{
             borderRadius: 3,
             overflow: 'hidden',
-            border: `1px solid rgba(74, 255, 117, 0.2)`,
-            background: `linear-gradient(135deg, rgba(74, 255, 117, 0.02) 0%, ${theme.palette.background.paper} 100%)`,
-            boxShadow: '0 8px 32px rgba(0, 0, 0, 0.1)',
+            border: `1px solid ${theme.palette.divider}`,
+            background: theme.palette.background.paper,
+            boxShadow: theme.shadows[1],
           }}
         >
           <Box
             sx={{
-              borderBottom: `1px solid rgba(74, 255, 117, 0.2)`,
-              background: `linear-gradient(90deg, rgba(74, 255, 117, 0.05) 0%, transparent 100%)`,
+              borderBottom: `1px solid ${theme.palette.divider}`,
             }}
           >
             <Tabs
@@ -535,8 +461,7 @@ const OrganizerEvents: React.FC = () => {
                 '& .MuiTabs-indicator': {
                   height: 3,
                   borderRadius: '3px 3px 0 0',
-                  background: `linear-gradient(90deg, ${theme.palette.primary.main} 0%, ${theme.palette.primary.light} 100%)`,
-                  boxShadow: `0 0 10px ${theme.palette.primary.main}50`,
+                  background: theme.palette.primary.main,
                 },
               }}
             >
@@ -547,9 +472,6 @@ const OrganizerEvents: React.FC = () => {
                 sx={{
                   '&.Mui-selected': {
                     color: theme.palette.primary.main,
-                    '& .MuiSvgIcon-root': {
-                      filter: 'drop-shadow(0 0 4px currentColor)',
-                    },
                   },
                 }}
               />
@@ -567,9 +489,6 @@ const OrganizerEvents: React.FC = () => {
                 sx={{
                   '&.Mui-selected': {
                     color: theme.palette.primary.main,
-                    '& .MuiSvgIcon-root': {
-                      filter: 'drop-shadow(0 0 4px currentColor)',
-                    },
                   },
                 }}
               />
@@ -592,23 +511,8 @@ const OrganizerEvents: React.FC = () => {
                 <DashboardIcon
                   sx={{
                     fontSize: 120,
-                    color: theme.palette.primary.main,
-                    filter: 'drop-shadow(0 0 20px currentColor)',
-                    opacity: 0.8,
-                  }}
-                />
-                <Box
-                  sx={{
-                    position: 'absolute',
-                    top: '50%',
-                    left: '50%',
-                    transform: 'translate(-50%, -50%)',
-                    width: 200,
-                    height: 200,
-                    borderRadius: '50%',
-                    background: `radial-gradient(circle, rgba(74, 255, 117, 0.1) 0%, transparent 70%)`,
-                    filter: 'blur(30px)',
-                    zIndex: -1,
+                    color: theme.palette.primary.light,
+                    opacity: 0.6,
                   }}
                 />
               </Box>
@@ -652,9 +556,9 @@ const OrganizerEvents: React.FC = () => {
                     py: 1.5,
                     fontWeight: 600,
                     textTransform: 'none',
-                    boxShadow: '0 6px 20px rgba(74, 255, 117, 0.3)',
+                    boxShadow: theme.shadows[2],
                     '&:hover': {
-                      boxShadow: '0 8px 25px rgba(74, 255, 117, 0.4)',
+                      boxShadow: theme.shadows[4],
                       transform: 'translateY(-2px)',
                     },
                     transition: 'all 0.3s ease',
@@ -673,11 +577,7 @@ const OrganizerEvents: React.FC = () => {
                     py: 1.5,
                     fontWeight: 600,
                     textTransform: 'none',
-                    borderColor: theme.palette.primary.main,
-                    color: theme.palette.primary.main,
                     '&:hover': {
-                      borderColor: theme.palette.primary.light,
-                      backgroundColor: 'rgba(74, 255, 117, 0.08)',
                       transform: 'translateY(-2px)',
                     },
                     transition: 'all 0.3s ease',
@@ -703,9 +603,8 @@ const OrganizerEvents: React.FC = () => {
                   alignItems: 'center',
                   mb: 4,
                   p: 3,
-                  background: `linear-gradient(135deg, rgba(74, 255, 117, 0.05) 0%, transparent 100%)`,
+                  backgroundColor: theme.palette.action.hover,
                   borderRadius: 2,
-                  border: `1px solid rgba(74, 255, 117, 0.1)`,
                 }}
               >
                 <Box>
@@ -739,9 +638,9 @@ const OrganizerEvents: React.FC = () => {
                     py: 1.5,
                     fontWeight: 600,
                     textTransform: 'none',
-                    boxShadow: '0 6px 20px rgba(74, 255, 117, 0.3)',
+                    boxShadow: theme.shadows[2],
                     '&:hover': {
-                      boxShadow: '0 8px 25px rgba(74, 255, 117, 0.4)',
+                      boxShadow: theme.shadows[4],
                       transform: 'translateY(-2px)',
                     },
                     transition: 'all 0.3s ease',
@@ -797,36 +696,20 @@ const OrganizerEvents: React.FC = () => {
                   sx={{
                     textAlign: 'center',
                     py: 12,
-                    background: `linear-gradient(135deg, rgba(74, 255, 117, 0.02) 0%, transparent 100%)`,
+                    backgroundColor: theme.palette.action.hover,
                     borderRadius: 3,
-                    border: `2px dashed rgba(74, 255, 117, 0.3)`,
+                    border: `2px dashed ${theme.palette.divider}`,
                     position: 'relative',
                     overflow: 'hidden',
                   }}
                 >
-                  <Box
-                    sx={{
-                      position: 'absolute',
-                      top: '50%',
-                      left: '50%',
-                      transform: 'translate(-50%, -50%)',
-                      width: 300,
-                      height: 300,
-                      borderRadius: '50%',
-                      background: `radial-gradient(circle, rgba(74, 255, 117, 0.05) 0%, transparent 70%)`,
-                      filter: 'blur(40px)',
-                      zIndex: 0,
-                    }}
-                  />
-
                   <Box sx={{ position: 'relative', zIndex: 1 }}>
                     <EventIcon
                       sx={{
                         fontSize: 80,
-                        color: theme.palette.primary.main,
+                        color: theme.palette.primary.light,
                         mb: 3,
                         opacity: 0.7,
-                        filter: 'drop-shadow(0 0 10px currentColor)',
                       }}
                     />
                     <Typography
@@ -857,9 +740,9 @@ const OrganizerEvents: React.FC = () => {
                         py: 1.5,
                         fontWeight: 600,
                         textTransform: 'none',
-                        boxShadow: '0 6px 20px rgba(74, 255, 117, 0.3)',
+                        boxShadow: theme.shadows[2],
                         '&:hover': {
-                          boxShadow: '0 8px 25px rgba(74, 255, 117, 0.4)',
+                          boxShadow: theme.shadows[4],
                           transform: 'translateY(-2px)',
                         },
                         transition: 'all 0.3s ease',
@@ -885,25 +768,11 @@ const OrganizerEvents: React.FC = () => {
             right: 32,
             width: 64,
             height: 64,
-            boxShadow: '0 8px 32px rgba(74, 255, 117, 0.3)',
+            boxShadow: theme.shadows[6],
             '&:hover': {
-              boxShadow: '0 12px 40px rgba(74, 255, 117, 0.4)',
               transform: 'scale(1.1)',
             },
             transition: 'all 0.3s ease',
-            '&::before': {
-              content: '""',
-              position: 'absolute',
-              top: -2,
-              left: -2,
-              right: -2,
-              bottom: -2,
-              borderRadius: '50%',
-              background: `linear-gradient(45deg, ${theme.palette.primary.main}, ${theme.palette.primary.light})`,
-              zIndex: -1,
-              filter: 'blur(4px)',
-              opacity: 0.7,
-            },
           }}
         >
           <AddIcon sx={{ fontSize: 28 }} />
@@ -931,7 +800,7 @@ const OrganizerEvents: React.FC = () => {
               width: '100%',
               borderRadius: 2,
               fontWeight: 600,
-              boxShadow: '0 8px 32px rgba(74, 255, 117, 0.3)',
+              boxShadow: theme.shadows[6],
             }}
           >
             ✅ Tu evento ya está disponible en la plataforma
