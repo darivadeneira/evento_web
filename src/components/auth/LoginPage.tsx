@@ -79,7 +79,7 @@ export const LoginPage = () => {
               src="/Images/Logo.png"
               alt="Ticket Logo"
               style={{
-                width: 180,
+                width: 120,
                 height: 120,
                 filter: 'drop-shadow(0 0 10px #4AFF75)',
                 marginBottom: '16px',

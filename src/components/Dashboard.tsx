@@ -1,12 +1,4 @@
-import { 
-  Box, 
-  Card, 
-  Typography,  
-  Container, 
-  Button, 
-  Chip,
-  Stack
-} from '@mui/material';
+import { Box, Card, Typography, Container, Button, Chip, Stack } from '@mui/material';
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { authProvider } from '../providers/auth.provider';
@@ -16,7 +8,6 @@ import { EventList } from './events/EventList';
 import { useTheme } from '@mui/material/styles';
 
 export const Dashboard = () => {
-
   const navigate = useNavigate();
   const storedAuth = localStorage.getItem('auth');
   const authData = storedAuth ? JSON.parse(storedAuth) : null;
@@ -59,6 +50,7 @@ export const Dashboard = () => {
           boxShadow: '0 10px 30px rgba(0,0,0,0.15)',
           py: { xs: 4, md: 5 },
           px: { xs: 3, md: 4 },
+          filter: 'drop-shadow(0 0 10px #4AFF75)',
         }}
       >
         <Box
@@ -79,7 +71,7 @@ export const Dashboard = () => {
                   fontWeight: 800,
                   fontSize: { xs: '2rem', md: '3.2rem' },
                   textShadow: '0 2px 10px rgba(0,0,0,0.3)',
-                  lineHeight: 1.2
+                  lineHeight: 1.2,
                 }}
               >
                 ¡Bienvenido a EPAA, {authData.username}!
@@ -92,116 +84,82 @@ export const Dashboard = () => {
                   maxWidth: '600px',
                   mt: 1,
                   textShadow: '0 1px 5px rgba(0,0,0,0.2)',
-                  fontWeight: 400
+                  fontWeight: 400,
                 }}
               >
                 Plataforma para la gestión de eventos y boletería
               </Typography>
               <Box mt={2}>
-                <Chip 
-                  label={authData.role}
-                  sx={{ 
-                    color: theme.palette.primary.contrastText,
-                    fontWeight: 'bold',
-                    mr: 1,
-                    bgcolor: theme.palette.primary.main,
-                    '&:hover': { 
-                      bgcolor: theme.palette.primary.light,
-                    }
-                  }} 
-                />
-                <Chip 
-                  label="3 eventos activos" 
-                  icon={<EventIcon />} 
-                  sx={{ 
+                <Button
+                  variant="contained"
+                  startIcon={<EventIcon />}
+                  href="/organizer-events"
+                  size="medium"
+                  sx={{
                     color: theme.palette.primary.contrastText,
                     bgcolor: theme.palette.primary.main,
-                    '&:hover': { 
-                      bgcolor: theme.palette.primary.light,
-                    }
-                  }} 
-                />
+                    borderRadius: 4,
+                    px: 2,
+                    py: 0.75,
+                    textTransform: 'none',
+                    fontWeight: 500,
+                    '&:hover': {
+                      bgcolor: '#777777',
+                      color: theme.palette.primary.contrastText, 
+                    },
+                  }}
+                >
+                  Administrar
+                </Button>
               </Box>
             </Box>
           </Box>
 
           {/* Estadísticas rápidas */}
           <Box sx={{ flex: 1 }}>
-            <Stack spacing={1}>
-              <Box>
-                <Box 
-                  sx={{ 
-                    bgcolor: 'rgba(74, 255, 117, 0.1)',
-                    p: 2, 
-                    borderRadius: 2,
-                    textAlign: 'center',
-                    boxShadow: '0 4px 12px rgba(0,0,0,0.1)',
-                    border: `1px solid ${theme.palette.primary.main}`,
-                  }}
-                >
-                  <Typography variant="h4" color="primary" fontWeight="bold">12</Typography>
-                  <Typography variant="body2" color="text.primary">Eventos Totales</Typography>
-                </Box>
-              </Box>
-              <Box>
-                <Box 
-                  sx={{ 
-                    bgcolor: 'rgba(74, 255, 117, 0.1)',
-                    p: 2, 
-                    borderRadius: 2,
-                    textAlign: 'center',
-                    boxShadow: '0 4px 12px rgba(0,0,0,0.1)',
-                    border: `1px solid ${theme.palette.primary.main}`,
-                  }}
-                >
-                  <Typography variant="h4" color="primary" fontWeight="bold">189</Typography>
-                  <Typography variant="body2" color="text.primary">Boletos Vendidos</Typography>
-                </Box>
-              </Box>
-              <Box>
-                <Box 
-                  sx={{ 
-                    mt: 1,
-                    bgcolor: 'rgba(74, 255, 117, 0.1)',
-                    p: 2, 
-                    borderRadius: 2,
-                    textAlign: 'center',
-                    boxShadow: '0 4px 12px rgba(0,0,0,0.1)',
-                    border: `1px solid ${theme.palette.primary.main}`,
-                  }}
-                >
-                  <Typography variant="h4" color="primary" fontWeight="bold">$4,850</Typography>
-                  <Typography variant="body2" color="text.primary">Ingresos Totales</Typography>
-                </Box>
-              </Box>
-            </Stack>
+            <img
+              src="/Images/Logo.png"
+              alt="Ticket Logo"
+              style={{
+                width: 180,
+                height: 180,
+                filter: 'drop-shadow(0 0 10px #4AFF75)',
+                marginBottom: '16px',
+              }}
+            />
           </Box>
         </Box>
-      </Box>     
+      </Box>
 
       {/* Cartelera de eventos */}
-      <Box 
-        sx={{ 
+      <Box
+        sx={{
           width: '100%',
           px: { xs: 2, md: 4 },
         }}
       >
-        <Box sx={{ 
-          display: 'flex', 
-          justifyContent: 'space-between', 
-          alignItems: 'center', 
-          mb: 3,
-          width: '100%',
-        }}>
-          <Typography variant="h4" color="text.primary" fontWeight={600}>
+        <Box
+          sx={{
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+            mb: 3,
+            width: '100%',
+          }}
+        >
+          <Typography
+            variant="h4"
+            color="text.primary"
+            fontWeight={600}
+          >
             Cartelera de Eventos
           </Typography>
-          <Button 
-            variant="contained" 
+          <Button
+            variant="contained"
             color="primary"
             endIcon={<EventIcon />}
-            sx={{ 
-              borderRadius: 2, 
+            sx={{
+              borderRadius: 2,
               textTransform: 'none',
               fontWeight: 500,
               boxShadow: '0 4px 12px rgba(74, 255, 117, 0.2)',
