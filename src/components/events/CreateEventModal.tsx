@@ -137,6 +137,11 @@ const CreateEventModal: React.FC<CreateEventModalProps> = ({ open, onClose, onEv
         if (eventDateTime < new Date()) {
           return 'La fecha y hora del evento no pueden estar en el pasado.';
         }
+        const maxDate = new Date();
+        maxDate.setFullYear(maxDate.getFullYear() + 2);
+        if (eventDateTime > maxDate) {
+          return 'La fecha del evento no puede ser mayor a 2 años desde hoy.';
+        }
         return null;
       },
       // Step 1: Event Details
@@ -749,12 +754,14 @@ const CreateEventModal: React.FC<CreateEventModalProps> = ({ open, onClose, onEv
         </DialogContent>
 
         <DialogActions sx={{ p: 3, borderTop: `1px solid rgba(74, 255, 117, 0.2)` }}>
-          <Button
-            onClick={handleClose}
-            sx={{ borderRadius: 2, px: 3, textTransform: 'none', fontWeight: 600 }}
-          >
-            Cancelar
-          </Button>
+          {!createdEventId && (
+            <Button
+              onClick={handleClose}
+              sx={{ borderRadius: 2, px: 3, textTransform: 'none', fontWeight: 600 }}
+            >
+              Cancelar
+            </Button>
+          )}
 
           {activeStep > 0 && !createdEventId && (
             <Button
