@@ -93,10 +93,9 @@ const OrganizerEvents: React.FC = () => {
     try {
       // Llamada especial al dataprovider para obtener eventos del organizador
       const response = await apiAuth.post('/event-entity/paginated', {
-        page: 1,
         rowsPage: 10,
         filter: { state: 'active', idUser: identity?.id },
-        order: 'ASC',
+        order: 'DESC',
         orderBy: 'id',
       });
 
