@@ -36,30 +36,31 @@ const CustomUserMenu = ({ open, onClose, name, lastname }: CustomUserMenuProps) 
   const navigate = useNavigate();
 
   const menuItems = [
+    // {
+    //   text: "Mi Perfil",
+    //   icon: <AccountCircleIcon />,
+    //   action: () => {
+    //     console.log("Ver perfil");
+    //     onClose();
+    //   },
+    // },
+    // {
+    //   text: "Configuración",
+    //   icon: <SettingsIcon />,
+    //   action: () => {
+    //     console.log("Configuración");
+    //     onClose();
+    //   },
+    // },
+    // {
+    //   text: "Notificaciones",
+    //   icon: <NotificationsIcon />,
+    //   action: () => {
+    //     console.log("Notificaciones");
+    //     onClose();
+    //   },
+    // },    
     {
-      text: "Mi Perfil",
-      icon: <AccountCircleIcon />,
-      action: () => {
-        console.log("Ver perfil");
-        onClose();
-      },
-    },
-    {
-      text: "Configuración",
-      icon: <SettingsIcon />,
-      action: () => {
-        console.log("Configuración");
-        onClose();
-      },
-    },
-    {
-      text: "Notificaciones",
-      icon: <NotificationsIcon />,
-      action: () => {
-        console.log("Notificaciones");
-        onClose();
-      },
-    },    {
       text: "Mis Eventos",
       icon: <EventAvailableIcon />,
       action: () => {
@@ -67,22 +68,22 @@ const CustomUserMenu = ({ open, onClose, name, lastname }: CustomUserMenuProps) 
         onClose();
       },
     },
-    {
-      text: "Tema",
-      icon: <PaletteIcon />,
-      action: () => {
-        console.log("Cambiar tema");
-        onClose();
-      },
-    },
-    {
-      text: "Ayuda",
-      icon: <HelpOutlineIcon />,
-      action: () => {
-        console.log("Ayuda");
-        onClose();
-      },
-    },
+    // {
+    //   text: "Tema",
+    //   icon: <PaletteIcon />,
+    //   action: () => {
+    //     console.log("Cambiar tema");
+    //     onClose();
+    //   },
+    // },
+    // {
+    //   text: "Ayuda",
+    //   icon: <HelpOutlineIcon />,
+    //   action: () => {
+    //     console.log("Ayuda");
+    //     onClose();
+    //   },
+    // },
   ];
 
   const handleLogout = () => {
