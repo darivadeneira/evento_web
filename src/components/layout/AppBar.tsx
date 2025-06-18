@@ -111,7 +111,10 @@ const AppBarComponent = (props: any) => {
                 fontSize: "1.5rem",
                 fontWeight: "bold",
                 color: theme.palette.text.primary,
+                cursor: 'pointer',
+                '&:hover': { color: theme.palette.primary.main },
               }}
+              onClick={() => { window.location.href = '/'; }}
             >
               EPAA
             </Box>
