@@ -38,12 +38,9 @@ export const authProvider: AuthProvider = {
         }
         return Promise.resolve();
       }
-      return Promise.reject(new Error("No se recibió el token de acceso"));
-    } catch (error: any) {
-      // Extrae el mensaje real del backend si existe
-      const status = error?.response?.status || 500;
-      const message = error?.response?.data?.message || error.message || "Falló la autenticación";
-      return Promise.reject({ status, message });
+      return Promise.reject(new Error("No se recibió el token de acceso"));    } catch (error: any) {
+      // Mensaje genérico para no revelar información específica sobre el error
+      return Promise.reject({ status: 401, message: "Credenciales incorrectas" });
     }
   },
 

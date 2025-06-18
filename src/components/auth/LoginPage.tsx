@@ -32,14 +32,9 @@ export const LoginPage = () => {
     })
       .then(() => {
         navigate('/');
-      })
-      .catch((error) => {
-        // Captura el mensaje real del backend si existe
-        let message = 'Credenciales inválidas';
-        if (error && (error.message || error.body?.message)) {
-          message = error.body?.message || error.message;
-        }
-        notify(message, { type: 'error' });
+      })      .catch((error) => {
+        // Mensaje genérico de seguridad, sin revelar detalles específicos
+        notify('Credenciales incorrectas', { type: 'error' });
       })
       .finally(() => {
         setLoading(false);
