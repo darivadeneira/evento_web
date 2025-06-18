@@ -116,70 +116,66 @@ const EventDetails = (props: any) => {
     return { label: state, color: theme.palette.text.secondary };
   };
 
-  const status = getEventStatus(state);
-  const content = (
+  const status = getEventStatus(state);  const content = (
     <Box
       sx={{
-        position: 'fixed',
-        top: 0,
-        left: 0,
-        right: 0,
-        bottom: 0,
-        width: '100vw',
-        height: '100vh',
-        display: 'flex',
-        flexDirection: 'column',
+        minHeight: '100vh',
         bgcolor: 'background.default',
-        zIndex: 1200,
-        overflow: 'auto',
-        pt: { xs: `${APPBAR_HEIGHT + 16}px`, md: `${APPBAR_HEIGHT + 24}px` },
+        pt: { xs: 2, md: 3 },
+        pb: { xs: 2, md: 3 },
+        px: { xs: 2, md: 3 },
       }}
     >
-      <EventHeader name={name} status={status} />
-      <Box sx={{ flex: 1, p: { xs: 2, md: 3 }, overflow: 'auto', display: 'flex', flexDirection: 'column' }}>
-        <Box
-          sx={{
-            maxWidth: '1200px',
-            mx: 'auto',
-            display: 'flex',
-            flexDirection: { xs: 'column', md: 'row' },
-            gap: { xs: 2, md: 2 },
-            flex: 1,
-            minHeight: 0,
-            width: '100%',
-            overflowX: 'auto',
+      <Box
+        sx={{
+          maxWidth: '1400px',
+          mx: 'auto',
+          width: '100%',
+        }}
+      >
+        <EventHeader name={name} status={status} />
+        <Box 
+          sx={{ 
+            mt: 3,
+            display: 'flex', 
+            flexDirection: 'column',
           }}
         >
-          <Paper
-            elevation={8}
+          <Box
             sx={{
-              flex: { xs: 'none', md: 3 },
-              width: { xs: '100%', md: 'auto' },
-              maxWidth: { xs: '100%', md: '1200px' },
-              minWidth: 0,
-              p: 3,
-              borderRadius: 3,
               display: 'flex',
-              flexDirection: 'column',
-              overflow: 'auto',
-              mb: { xs: 2, md: 0 },
-              height: { xs: 'auto', md: '100%' },
+              flexDirection: { xs: 'column', md: 'row' },
+              gap: { xs: 2, md: 3 },
+              width: '100%',
             }}
           >
-            <Typography variant="h4" fontWeight={600} gutterBottom color="text.primary">
-              Detalles del Evento
-            </Typography>
-            <Divider sx={{ mb: 3 }} />
-            <EventDetailsPanel date={date} hour={hour} capacity={capacity} description={description} />
-          </Paper>
-          <EventLocationPanel city={city} coordinates={coordinates} />
-          <TicketCategoriesPanel
-            ticketCategories={ticketCategories}
-            ticketQuantities={ticketQuantities}
-            incrementTicket={incrementTicket}
-            decrementTicket={decrementTicket}
-            totalAmount={totalAmount}
-          />
+            <Paper
+              elevation={8}
+              sx={{
+                flex: { xs: 'none', md: 3 },
+                width: { xs: '100%', md: 'auto' },
+                p: 3,
+                borderRadius: 3,
+                background: theme.palette.background.paper,
+                boxShadow: '0 10px 30px rgba(0,0,0,0.1)',
+                mb: { xs: 2, md: 0 },
+              }}
+            >
+              <Typography variant="h4" fontWeight={600} gutterBottom color="text.primary">
+                Detalles del Evento
+              </Typography>
+              <Divider sx={{ mb: 3 }} />
+              <EventDetailsPanel date={date} hour={hour} capacity={capacity} description={description} />
+            </Paper>
+            <EventLocationPanel city={city} coordinates={coordinates} />
+            <TicketCategoriesPanel
+              ticketCategories={ticketCategories}
+              ticketQuantities={ticketQuantities}
+              incrementTicket={incrementTicket}
+              decrementTicket={decrementTicket}
+              totalAmount={totalAmount}
+            />
+          </Box>
         </Box>
       </Box>
     </Box>

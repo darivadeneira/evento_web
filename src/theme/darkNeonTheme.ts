@@ -1,6 +1,31 @@
 // theme.ts
 import { createTheme } from '@mui/material/styles';
 
+// Extender la interfaz del tema para incluir colores personalizados
+declare module '@mui/material/styles' {
+  interface Theme {
+    custom: {
+      greenBorder: string;
+      greenGlow: string;
+      greenGradient: {
+        start: string;
+        end: string;
+      };
+    };
+  }
+  
+  interface ThemeOptions {
+    custom?: {
+      greenBorder?: string;
+      greenGlow?: string;
+      greenGradient?: {
+        start?: string;
+        end?: string;
+      };
+    };
+  }
+}
+
 export const darkNeonTheme = createTheme({
   palette: {
     mode: 'dark',
@@ -30,11 +55,19 @@ export const darkNeonTheme = createTheme({
     },
     warning: {
       main: '#FFC107',
-    },
-    info: {
+    },    info: {
       main: '#7FFF9C',
     },
     divider: 'rgba(255, 255, 255, 0.12)',
+  },
+  // Extender la paleta con colores personalizados
+  custom: {
+    greenBorder: 'rgba(74, 255, 117, 0.6)', // Verde del borde con opacidad
+    greenGlow: 'rgba(74, 255, 117, 0.3)', // Verde para efectos de glow
+    greenGradient: {
+      start: 'rgba(74, 255, 117, 0.3)',
+      end: 'rgba(0, 230, 118, 0.3)',
+    },
   },
   typography: {
     fontFamily: '"Poppins", "Roboto", "Arial", sans-serif',
