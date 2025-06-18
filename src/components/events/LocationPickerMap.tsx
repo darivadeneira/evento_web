@@ -1,5 +1,5 @@
-import React, { useEffect, useState } from 'react';
-import { MapContainer, TileLayer, Marker, Popup, useMapEvents } from 'react-leaflet';
+import React, { useEffect, useState, useRef } from 'react';
+import { MapContainer, TileLayer, Marker, Popup, useMapEvents, useMap } from 'react-leaflet';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 
@@ -24,7 +24,7 @@ const createCustomIcon = () => {
         height: 20px;
         border-radius: 50%;
         border: 3px solid white;
-        box-shadow: 0 2px 8px rgba(74, 255, 117, 0.4);
+        box-shadow: 0 2px 8px rgba(255, 18, 18, 0.4);
         position: relative;
       ">
         <div style="
@@ -36,7 +36,7 @@ const createCustomIcon = () => {
           height: 0;
           border-left: 8px solid transparent;
           border-right: 8px solid transparent;
-          border-bottom: 12px solid #4AFF75;
+          border-bottom: 12px solidrgb(0, 0, 0);
         "></div>
       </div>
     `,
@@ -59,26 +59,58 @@ const MapClickHandler: React.FC<MapClickHandlerProps> = ({ onLocationSelect }) =
   return null;
 };
 
+// Nuevo componente para centrar el mapa cuando cambia la ubicación seleccionada
+const CenterMapOnSelect: React.FC<{ selectedLocation?: [number, number] }> = ({ selectedLocation }) => {
+  const map = useMap();
+  useEffect(() => {
+    if (selectedLocation && selectedLocation[0] !== 0 && selectedLocation[1] !== 0) {
+      map.setView([selectedLocation[1], selectedLocation[0]], map.getZoom(), { animate: true });
+    }
+  }, [selectedLocation, map]);
+  return null;
+};
+
 interface LocationPickerMapProps {
   selectedLocation?: [number, number]; // [lng, lat]
   onLocationSelect: (coords: [number, number]) => void;
   height?: number;
+  onAddressChange?: (address: string | null) => void;
 }
 
-const LocationPickerMap: React.FC<LocationPickerMapProps> = ({ selectedLocation, onLocationSelect, height = 300 }) => {
+const LocationPickerMap: React.FC<LocationPickerMapProps> = ({ selectedLocation, onLocationSelect, height = 300, onAddressChange }) => {
   // Centro por defecto en Quito, Ecuador
   const [mapCenter] = useState<[number, number]>([-0.1807, -78.4678]);
-  const [mapKey, setMapKey] = useState(0);
+  const [address, setAddress] = useState<string | null>(null);
+  const markerRef = useRef<any>(null);
 
   useEffect(() => {
     fixLeafletIcon();
   }, []);
 
+  // Obtener dirección cuando cambia la ubicación seleccionada
   useEffect(() => {
-    // Si hay una ubicación seleccionada, centrar el mapa en ella
-    if (selectedLocation && selectedLocation[0] !== 0 && selectedLocation[1] !== 0) {
-      setMapKey((prev) => prev + 1); // Forzar re-render para actualizar centro
-    }
+    const fetchAddress = async () => {
+      if (selectedLocation && selectedLocation[0] !== 0 && selectedLocation[1] !== 0) {
+        setAddress(null); // Limpiar antes de buscar
+        if (onAddressChange) onAddressChange(null);
+        try {
+          const response = await fetch(
+            `https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${selectedLocation[1]}&lon=${selectedLocation[0]}&accept-language=es`
+          );
+          const data = await response.json();
+          const found = data.display_name || 'Dirección no encontrada';
+          setAddress(found);
+          if (onAddressChange) onAddressChange(found);
+        } catch (e) {
+          setAddress('No se pudo obtener la dirección');
+          if (onAddressChange) onAddressChange('No se pudo obtener la dirección');
+        }
+      } else {
+        setAddress(null);
+        if (onAddressChange) onAddressChange(null);
+      }
+    };
+    fetchAddress();
   }, [selectedLocation]);
 
   const handleLocationSelect = (coords: [number, number]) => {
@@ -94,7 +126,6 @@ const LocationPickerMap: React.FC<LocationPickerMapProps> = ({ selectedLocation,
   return (
     <div style={{ height: `${height}px`, width: '100%', borderRadius: '8px', overflow: 'hidden' }}>
       <MapContainer
-        key={mapKey}
         center={currentCenter}
         zoom={13}
         style={{ height: '100%', width: '100%' }}
@@ -105,27 +136,24 @@ const LocationPickerMap: React.FC<LocationPickerMapProps> = ({ selectedLocation,
           attribution='&copy; <a href="https://openstreetmap.org">OpenStreetMap</a> contributors'
           url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
         />
-
+        <CenterMapOnSelect selectedLocation={selectedLocation} />
         {/* Marcador para la ubicación seleccionada */}
         {selectedLocation && selectedLocation[0] !== 0 && selectedLocation[1] !== 0 && (
           <Marker
-            position={[selectedLocation[1], selectedLocation[0]]} // [lat, lng] para el marcador
+            position={[selectedLocation[1], selectedLocation[0]]}
             icon={createCustomIcon()}
+            ref={markerRef}
+            eventHandlers={{
+              add: () => {
+                if (markerRef.current) {
+                  markerRef.current.openPopup();
+                }
+              }
+            }}
           >
-            <Popup>
-              <div style={{ textAlign: 'center', padding: '8px' }}>
-                <strong>📍 Ubicación del Evento</strong>
-                <br />
-                <small>
-                  Lat: {selectedLocation[1].toFixed(6)}
-                  <br />
-                  Lng: {selectedLocation[0].toFixed(6)}
-                </small>
-              </div>
-            </Popup>
+            {/* Elimina el Popup del Marker (opcional, si ya no quieres mostrarlo) */}
           </Marker>
         )}
-
         <MapClickHandler onLocationSelect={handleLocationSelect} />
       </MapContainer>
     </div>

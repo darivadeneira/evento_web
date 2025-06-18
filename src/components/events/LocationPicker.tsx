@@ -12,9 +12,11 @@ interface LocationPickerProps {
 
 const LocationPicker: React.FC<LocationPickerProps> = ({ onLocationSelect, selectedLocation }) => {
   const theme = useTheme();
+  const [address, setAddress] = useState<string | null>(null);
 
   const clearSelection = () => {
     onLocationSelect([0, 0]);
+    setAddress(null);
   };
 
   return (
@@ -39,6 +41,7 @@ const LocationPicker: React.FC<LocationPickerProps> = ({ onLocationSelect, selec
           selectedLocation={selectedLocation}
           onLocationSelect={onLocationSelect}
           height={300}
+          onAddressChange={setAddress}
         />
       </Paper>
 
@@ -59,6 +62,12 @@ const LocationPicker: React.FC<LocationPickerProps> = ({ onLocationSelect, selec
             variant="body2"
             sx={{ fontWeight: 500 }}
           >
+            {address
+              ? <>
+                  <b>Dirección:</b> {address}
+                  <br />
+                </>
+              : 'Buscando dirección...'}
             Ubicación seleccionada: Latitud {selectedLocation[1].toFixed(6)}, Longitud {selectedLocation[0].toFixed(6)}
           </Typography>
         </Alert>
