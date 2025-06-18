@@ -96,7 +96,10 @@ const AppBarComponent = (props: any) => {
         }}
       >
         {/* Logo y nombre de la empresa */}
-        <Box sx={{ display: "flex", alignItems: "center" }}>
+        <Box 
+        onClick={() => { window.location.href = '/'; }}
+        sx={{ display: "flex", alignItems: "center",cursor: 'pointer'}}
+        >
           <img
             src="/Images/Logo.png"
             alt="Logo"
@@ -114,7 +117,6 @@ const AppBarComponent = (props: any) => {
                 cursor: 'pointer',
                 '&:hover': { color: theme.palette.primary.main },
               }}
-              onClick={() => { window.location.href = '/'; }}
             >
               EPAA
             </Box>

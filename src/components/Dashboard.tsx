@@ -1,6 +1,7 @@
 import { Box, Card, Typography, Container, Button, Chip, Stack } from '@mui/material';
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { usePermissions } from 'react-admin';
 import { authProvider } from '../providers/auth.provider';
 import { jwtDecode } from 'jwt-decode';
 import EventIcon from '@mui/icons-material/Event';
@@ -9,10 +10,14 @@ import { useTheme } from '@mui/material/styles';
 
 export const Dashboard = () => {
   const navigate = useNavigate();
+  const { permissions } = usePermissions();
   const storedAuth = localStorage.getItem('auth');
   const authData = storedAuth ? JSON.parse(storedAuth) : null;
 
   const theme = useTheme();
+
+  // Verificar si el usuario tiene rol de organizador
+  const isOrganizer = permissions === 'organizer';
 
   useEffect(() => {
     try {
@@ -87,31 +92,32 @@ export const Dashboard = () => {
                   fontWeight: 400,
                 }}
               >
-                Plataforma para la gestión de eventos y boletería
-              </Typography>
-              <Box mt={2}>
-                <Button
-                  variant="contained"
-                  startIcon={<EventIcon />}
-                  href="/organizer-events"
-                  size="medium"
-                  sx={{
-                    color: theme.palette.primary.contrastText,
-                    bgcolor: theme.palette.primary.main,
-                    borderRadius: 4,
-                    px: 2,
-                    py: 0.75,
-                    textTransform: 'none',
-                    fontWeight: 500,
-                    '&:hover': {
-                      bgcolor: '#777777',
-                      color: theme.palette.primary.contrastText, 
-                    },
-                  }}
-                >
-                  Administrar
-                </Button>
-              </Box>
+                Plataforma para la gestión de eventos y boletería              </Typography>
+              {isOrganizer && (
+                <Box mt={2}>
+                  <Button
+                    variant="contained"
+                    startIcon={<EventIcon />}
+                    href="/organizer-events"
+                    size="medium"
+                    sx={{
+                      color: theme.palette.primary.contrastText,
+                      bgcolor: theme.palette.primary.main,
+                      borderRadius: 4,
+                      px: 2,
+                      py: 0.75,
+                      textTransform: 'none',
+                      fontWeight: 500,
+                      '&:hover': {
+                        bgcolor: '#777777',
+                        color: theme.palette.primary.contrastText, 
+                      },
+                    }}
+                  >
+                    Administrar
+                  </Button>
+                </Box>
+              )}
             </Box>
           </Box>
 
