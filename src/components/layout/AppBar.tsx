@@ -98,12 +98,11 @@ const AppBarComponent = (props: any) => {
         {/* Logo y nombre de la empresa */}
         <Box sx={{ display: "flex", alignItems: "center" }}>
           <img
-            src="/logo.png"
+            src="/Images/Logo.png"
             alt="Logo"
             style={{
               height: "40px",
               marginRight: "16px",
-              filter: "brightness(0) invert(1)",
             }}
           />
           {!isMobile && (

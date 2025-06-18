@@ -135,7 +135,7 @@ const EventCard: React.FC<EventCardProps> = ({ event, admin = false }) => {
             >
               Detalles
             </Button>
-            {!admin && (
+            {/* {!admin && (
               <Button
                 variant="contained"
                 size="small"
@@ -145,7 +145,7 @@ const EventCard: React.FC<EventCardProps> = ({ event, admin = false }) => {
               >
                 Comprar
               </Button>
-            )}
+            )} */}
           </Box>
         </CardContent>
       </Card>

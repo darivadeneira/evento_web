@@ -11,16 +11,11 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { authProvider } from '../providers/auth.provider';
 import { jwtDecode } from 'jwt-decode';
-import MapModal from './mapa/MapModal';
 import EventIcon from '@mui/icons-material/Event';
 import { EventList } from './events/EventList';
 import { useTheme } from '@mui/material/styles';
 
 export const Dashboard = () => {
-  const [mapModalOpen, setMapModalOpen] = useState(false);
-  const [selectedEvent, setSelectedEvent] = useState<{title: string, location: string} | null>(null);
-  const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
-  const openMenu = Boolean(anchorEl);
 
   const navigate = useNavigate();
   const storedAuth = localStorage.getItem('auth');
@@ -50,11 +45,6 @@ export const Dashboard = () => {
     await authProvider.logout({});
     localStorage.removeItem('auth');
     navigate('/login', { replace: true });
-  };
-
-  const handleOpenMapModal = (event: {title: string, location: string}) => {
-    setSelectedEvent(event);
-    setMapModalOpen(true);
   };
 
   return (
@@ -231,16 +221,6 @@ export const Dashboard = () => {
           <EventList />
         </Box>
       </Box>
-      
-      {/* Modal del Mapa */}
-      {selectedEvent && (
-        <MapModal
-          open={mapModalOpen}
-          onClose={() => setMapModalOpen(false)}
-          eventTitle={selectedEvent.title}
-          eventLocation={selectedEvent.location}
-        />
-      )}
     </Box>
   );
 };
