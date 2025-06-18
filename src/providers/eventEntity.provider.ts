@@ -1,4 +1,4 @@
-import type { DataProvider, GetListParams } from "react-admin";
+import type { DataProvider, GetListParams, GetOneParams } from "react-admin";
 import { apiAuth } from "../api/api";
 
 export const eventEntityProvider: DataProvider = {
@@ -13,9 +13,22 @@ export const eventEntityProvider: DataProvider = {
         })
         const {data,count} = response.data;
         return {data: data, total: count}
-    },
-    getOne: async () => {
-        return Promise.reject(new Error("Not implemented"));
+    },    getOne: async (resource, params: GetOneParams) => {
+        try {
+            const eventResponse = await apiAuth.get(`/${resource}/${params.id}`);
+            // Obtener categorías de tickets para este evento
+            const ticketCategoriesResponse = await apiAuth.get(`/ticket-category/${params.id}`);
+            
+            // Combinar datos del evento con categorías de tickets
+            return { 
+                data: {
+                    ...eventResponse.data,
+                    ticketCategories: ticketCategoriesResponse.data || [] 
+                }
+            };
+        } catch (error) {
+            return Promise.reject(error);
+        }
     },
     getMany: async () => {
         return Promise.reject(new Error("Not implemented"));

@@ -10,6 +10,7 @@ import mainProvider from './providers/main.provider';
 import { EventList } from './components/events/EventList';
 import { darkNeonTheme } from './theme/darkNeonTheme';
 import OrganizerEvents from './components/events/OrganizerEvents';
+import EventDetails from './components/events/information/EventDetails';
 
 function App() {
   return (
@@ -34,11 +35,16 @@ function App() {
               <Resource
                 name="event-entity"
                 list={EventList}
+                show={EventDetails}
               />
               <CustomRoutes>
                 <Route
                   path="/organizer-events"
                   element={<OrganizerEvents />}
+                />
+                <Route
+                  path="/evento/:id"
+                  element={<EventDetails />}
                 />
               </CustomRoutes>
             </Admin>

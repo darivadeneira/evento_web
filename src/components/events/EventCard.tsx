@@ -5,6 +5,7 @@ import PeopleIcon from '@mui/icons-material/People';
 import { DateField } from 'react-admin';
 import React from 'react';
 import type { IEvent } from '../../types/event.type';
+import { useNavigate } from 'react-router-dom';
 
 interface EventCardProps {
   event: IEvent;
@@ -12,9 +13,8 @@ interface EventCardProps {
 }
 
 const EventCard: React.FC<EventCardProps> = ({ event, admin = false }) => {
+  const navigate = useNavigate();    
   const getEventStatus = (event: IEvent) => {
-    const now = new Date();
-    const eventDate = new Date(`${event.date}T${event.hour}`);
     // Considerar evento en progreso si la fecha es hoy y la hora ya pasó pero no ha terminado (simple: 4h de duración)
     if (event.state === 'active') {
       return { label: 'Activo', color: 'default', bg: '#fff', textColor: '#333' };
@@ -126,13 +126,12 @@ const EventCard: React.FC<EventCardProps> = ({ event, admin = false }) => {
           <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
             <PeopleIcon sx={{ mr: 1, color: 'text.secondary' }} />
             <Typography variant="body2">Capacidad: {event.capacity}</Typography>
-          </Box>
-
-          <Box sx={{ mt: 'auto', display: 'flex', gap: 1 }}>
+          </Box>          <Box sx={{ mt: 'auto', display: 'flex', gap: 1 }}>
             <Button
               variant="outlined"
               size="small"
               fullWidth
+              onClick={() => navigate(`/evento/${event.id}`)}
             >
               Detalles
             </Button>
