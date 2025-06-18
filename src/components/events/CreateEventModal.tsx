@@ -554,6 +554,12 @@ const CreateEventModal: React.FC<CreateEventModalProps> = ({ open, onClose, onEv
           >
             ¡Evento creado! Ahora, define las categorías de boletos.
           </Typography>
+          <Typography
+            variant="body2"
+            sx={{ mt: 1 }}
+          >
+            Nota: El evento ya ha sido guardado. No puedes volver a los pasos anteriores.
+          </Typography>
         </Alert>
 
         {ticketCategories.map((category, index) => (
@@ -750,7 +756,7 @@ const CreateEventModal: React.FC<CreateEventModalProps> = ({ open, onClose, onEv
             Cancelar
           </Button>
 
-          {activeStep > 0 && (
+          {activeStep > 0 && !createdEventId && (
             <Button
               onClick={handleBack}
               sx={{ borderRadius: 2, px: 3, textTransform: 'none', fontWeight: 600 }}
