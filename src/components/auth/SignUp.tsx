@@ -57,6 +57,7 @@ export const SignUpPage = () => {
   const [passwordStrength, setPasswordStrength] = useState(0);
   const [termsAccepted, setTermsAccepted] = useState(false);
   const [fieldValidation, setFieldValidation] = useState<Record<string, boolean>>({});
+  const [signupSuccess, setSignupSuccess] = useState(false);
   const notify = useNotify();
   const navigate = useNavigate();
 
@@ -100,8 +101,7 @@ export const SignUpPage = () => {
 
     const response = await authProvider.signup(values);
     if (response?.status === 201) {
-      notify(response.message || 'Cuenta creada con éxito', { type: 'info' });
-      navigate('/login');
+      setSignupSuccess(true);
     } else {
       notify(response?.message || 'Error al crear la cuenta', { type: 'error' });
     }
@@ -180,6 +180,44 @@ export const SignUpPage = () => {
       borderColor: '#FF5252',
     },
   };
+
+  const AccountCreatedView = () => (
+    <Box sx={{ textAlign: 'center', p: 4 }}>
+      <CheckCircleIcon sx={{ fontSize: 80, color: '#4AFF75', mb: 3 }} />
+      <Typography
+        variant="h4"
+        component="h2"
+        fontWeight="bold"
+        sx={{ mb: 2, color: '#FFFFFF' }}
+      >
+        ¡Cuenta Creada!
+      </Typography>
+      <Typography
+        variant="body1"
+        sx={{ color: '#E0E0E0', mb: 4 }}
+      >
+        Tu cuenta ha sido creada exitosamente. Ya puedes iniciar sesión y empezar a explorar.
+      </Typography>
+      <Button
+        variant="contained"
+        fullWidth
+        onClick={() => navigate('/login')}
+        sx={{
+          py: 1.5,
+          fontWeight: 600,
+          borderRadius: 2,
+          backgroundColor: '#4AFF75',
+          color: '#000000',
+          textTransform: 'none',
+          '&:hover': {
+            backgroundColor: '#7FFF9C',
+          },
+        }}
+      >
+        Ir a Iniciar Sesión
+      </Button>
+    </Box>
+  );
 
   const renderStepContent = (step: number) => {
     switch (step) {
@@ -432,7 +470,7 @@ export const SignUpPage = () => {
                 helperText={fieldErrors.phone}
                 error={!!fieldErrors.phone}
                 defaultValue={formData.phone}
-                placeholder="+593 999 123 456"
+                placeholder="099 123 4564"
                 slotProps={{
                   input: {
                     endAdornment: <ValidationIcon fieldName="phone" />,
@@ -543,77 +581,83 @@ export const SignUpPage = () => {
               border: '1px solid rgba(74, 255, 117, 0.3)',
             }}
           >
-            {/* Header */}
-            <Box sx={{ textAlign: 'center', mb: 4 }}>
-              <Typography
-                variant="h4"
-                component="h1"
-                fontWeight="bold"
-                sx={{ mb: 1, color: '#FFFFFF' }}
-              >
-                Crear una Cuenta
-              </Typography>
-              <Typography
-                variant="body2"
-                sx={{ color: '#E0E0E0' }}
-              >
-                ¿Ya tienes una cuenta?{' '}
-                <Link
-                  component="button"
-                  variant="body2"
-                  onClick={() => navigate('/login')}
-                  sx={{
-                    color: '#4AFF75',
-                    textDecoration: 'none',
-                    fontWeight: 500,
-                    '&:hover': {
-                      textDecoration: 'underline',
-                    },
-                  }}
-                >
-                  Iniciar sesión
-                </Link>
-              </Typography>
-            </Box>
-
-            {/* Stepper */}
-            <Stepper
-              activeStep={activeStep}
-              sx={{ mb: 4 }}
-            >
-              {steps.map((label, index) => (
-                <Step key={label}>
-                  <StepLabel
-                    slotProps={{
-                      stepIcon: {
-                        sx: {
-                          '&.Mui-active': {
-                            color: '#4AFF75',
-                          },
-                          '&.Mui-completed': {
-                            color: '#4AFF75',
-                          },
-                          color: '#666666',
-                        },
-                      },
-                    }}
+            {signupSuccess ? (
+              <AccountCreatedView />
+            ) : (
+              <>
+                {/* Header */}
+                <Box sx={{ textAlign: 'center', mb: 4 }}>
+                  <Typography
+                    variant="h4"
+                    component="h1"
+                    fontWeight="bold"
+                    sx={{ mb: 1, color: '#FFFFFF' }}
                   >
-                    <Typography
-                      variant="caption"
+                    Crear una Cuenta
+                  </Typography>
+                  <Typography
+                    variant="body2"
+                    sx={{ color: '#E0E0E0' }}
+                  >
+                    ¿Ya tienes una cuenta?{' '}
+                    <Link
+                      component="button"
+                      variant="body2"
+                      onClick={() => navigate('/login')}
                       sx={{
-                        color: activeStep >= index ? '#4AFF75' : '#666666',
-                        fontWeight: activeStep >= index ? 600 : 400,
+                        color: '#4AFF75',
+                        textDecoration: 'none',
+                        fontWeight: 500,
+                        '&:hover': {
+                          textDecoration: 'underline',
+                        },
                       }}
                     >
-                      {label}
-                    </Typography>
-                  </StepLabel>
-                </Step>
-              ))}
-            </Stepper>
+                      Iniciar sesión
+                    </Link>
+                  </Typography>
+                </Box>
 
-            {/* Step Content */}
-            {renderStepContent(activeStep)}
+                {/* Stepper */}
+                <Stepper
+                  activeStep={activeStep}
+                  sx={{ mb: 4 }}
+                >
+                  {steps.map((label, index) => (
+                    <Step key={label}>
+                      <StepLabel
+                        slotProps={{
+                          stepIcon: {
+                            sx: {
+                              '&.Mui-active': {
+                                color: '#4AFF75',
+                              },
+                              '&.Mui-completed': {
+                                color: '#4AFF75',
+                              },
+                              color: '#666666',
+                            },
+                          },
+                        }}
+                      >
+                        <Typography
+                          variant="caption"
+                          sx={{
+                            color: activeStep >= index ? '#4AFF75' : '#666666',
+                            fontWeight: activeStep >= index ? 600 : 400,
+                          }}
+                        >
+                          {label}
+                        </Typography>
+                      </StepLabel>
+                    </Step>
+                  ))}
+                </Stepper>
+
+                {/* Step Content */}
+                {renderStepContent(activeStep)}
+              </>
+            )}
           </Card>
         </Box>
       </ThemeProvider>

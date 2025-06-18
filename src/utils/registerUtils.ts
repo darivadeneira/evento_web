@@ -119,9 +119,9 @@ export const validateRegistrationForm = (values: any, step: number, termsAccepte
     }
 
     // Phone
-    const phoneRegex = /^(\+?[1-9]\d{0,3})?[\s-]?\(?[0-9]{3}\)?[\s-]?[0-9]{3}[\s-]?[0-9]{4}$/;
-    if (!values.phone || !phoneRegex.test(values.phone.replace(/\s/g, ''))) {
-      errors.push('El número telefónico debe tener un formato válido (ej: +593 999 123 456 o 0999123456)');
+    const phoneRegex = /^\d{10}$/;
+    if (!values.phone || !phoneRegex.test(values.phone.replace(/\D/g, ''))) {
+      errors.push('El número telefónico debe contener 10 dígitos (ej: 0999123456)');
     } else {
       validation.phone = true;
     }
