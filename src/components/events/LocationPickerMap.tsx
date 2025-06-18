@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useRef } from 'react';
-import { MapContainer, TileLayer, Marker, Popup, useMapEvents, useMap } from 'react-leaflet';
+import { MapContainer, TileLayer, Marker, useMapEvents, useMap } from 'react-leaflet';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 
@@ -77,7 +77,12 @@ interface LocationPickerMapProps {
   onAddressChange?: (address: string | null) => void;
 }
 
-const LocationPickerMap: React.FC<LocationPickerMapProps> = ({ selectedLocation, onLocationSelect, height = 300, onAddressChange }) => {
+const LocationPickerMap: React.FC<LocationPickerMapProps> = ({
+  selectedLocation,
+  onLocationSelect,
+  height = 300,
+  onAddressChange,
+}) => {
   // Centro por defecto en Quito, Ecuador
   const [mapCenter] = useState<[number, number]>([-0.1807, -78.4678]);
   const [address, setAddress] = useState<string | null>(null);
@@ -95,7 +100,7 @@ const LocationPickerMap: React.FC<LocationPickerMapProps> = ({ selectedLocation,
         if (onAddressChange) onAddressChange(null);
         try {
           const response = await fetch(
-            `https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${selectedLocation[1]}&lon=${selectedLocation[0]}&accept-language=es`
+            `https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${selectedLocation[1]}&lon=${selectedLocation[0]}&accept-language=es`,
           );
           const data = await response.json();
           const found = data.display_name || 'Dirección no encontrada';
@@ -148,7 +153,7 @@ const LocationPickerMap: React.FC<LocationPickerMapProps> = ({ selectedLocation,
                 if (markerRef.current) {
                   markerRef.current.openPopup();
                 }
-              }
+              },
             }}
           >
             {/* Elimina el Popup del Marker (opcional, si ya no quieres mostrarlo) */}

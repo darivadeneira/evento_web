@@ -92,10 +92,12 @@ const OrganizerEvents: React.FC = () => {
     setLoading(true);
     try {
       // Llamada especial al dataprovider para obtener eventos del organizador
-      const response = await apiAuth.post('/event-entity/organizer-events', {
-        organizerId: identity.id,
+      const response = await apiAuth.post('/event-entity/paginated', {
         page: 1,
-        rowsPage: 50,
+        rowsPage: 10,
+        filter: { state: 'active', idUser: identity?.id },
+        order: 'ASC',
+        orderBy: 'id',
       });
 
       if (response.data && response.data.data) {
@@ -781,10 +783,13 @@ const OrganizerEvents: React.FC = () => {
                       xs={12}
                       sm={6}
                       md={4}
-                      lg={3}
+                      lg={4}
                       key={event.id}
                     >
-                      <EventCard event={event} />
+                      <EventCard
+                        event={event}
+                        admin={true}
+                      />
                     </Grid>
                   ))}
                 </Grid>
