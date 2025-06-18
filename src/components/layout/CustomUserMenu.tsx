@@ -10,7 +10,7 @@ import {
   IconButton,
 } from "@mui/material";
 import { useTheme } from "@mui/material/styles";
-import { useGetIdentity, useLogout } from "react-admin";
+import { useGetIdentity, useLogout, usePermissions } from "react-admin";
 import { useNavigate } from "react-router-dom";
 import CloseIcon from "@mui/icons-material/Close";
 import AccountCircleIcon from "@mui/icons-material/AccountCircle";
@@ -31,27 +31,31 @@ interface CustomUserMenuProps {
 const CustomUserMenu = ({ open, onClose, name, lastname }: CustomUserMenuProps) => {
   const theme = useTheme();
   const { data: identity } = useGetIdentity();
+  const { permissions } = usePermissions();
   const initials = `${name?.charAt(0).toUpperCase()}${lastname?.charAt(0).toUpperCase()}`;
   const logout = useLogout();
   const navigate = useNavigate();
+  // Verificar si el usuario tiene rol de organizador
+  const isOrganizer = permissions === 'organizer';
+  console.log("Permisos del usuario:", permissions, "Es organizador:", isOrganizer);
 
   const menuItems = [
-    // {
-    //   text: "Mi Perfil",
-    //   icon: <AccountCircleIcon />,
-    //   action: () => {
-    //     console.log("Ver perfil");
-    //     onClose();
-    //   },
-    // },
-    // {
-    //   text: "Configuración",
-    //   icon: <SettingsIcon />,
-    //   action: () => {
-    //     console.log("Configuración");
-    //     onClose();
-    //   },
-    // },
+    {
+      text: "Mi Perfil",
+      icon: <AccountCircleIcon />,
+      action: () => {
+        console.log("Ver perfil");
+        onClose();
+      },
+    },
+    {
+      text: "Configuración",
+      icon: <SettingsIcon />,
+      action: () => {
+        console.log("Configuración");
+        onClose();
+      },
+    },
     // {
     //   text: "Notificaciones",
     //   icon: <NotificationsIcon />,
@@ -60,14 +64,14 @@ const CustomUserMenu = ({ open, onClose, name, lastname }: CustomUserMenuProps) 
     //     onClose();
     //   },
     // },    
-    {
+    ...(isOrganizer ? [{
       text: "Mis Eventos",
       icon: <EventAvailableIcon />,
       action: () => {
         navigate('/organizer-events');
         onClose();
       },
-    },
+    }] : []),
     // {
     //   text: "Tema",
     //   icon: <PaletteIcon />,

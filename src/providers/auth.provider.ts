@@ -76,12 +76,11 @@ export const authProvider: AuthProvider = {
     }
     return Promise.reject();
   },
-
   getPermissions: () => {
     const auth = localStorage.getItem("auth");
     if (auth) {
-      const { roles } = JSON.parse(auth);
-      return Promise.resolve(roles);
+      const { rol } = JSON.parse(auth);
+      return Promise.resolve(rol);
     }
     return Promise.reject();
   },
