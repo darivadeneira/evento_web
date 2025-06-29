@@ -3,6 +3,24 @@ import { useEffect, useState, useRef } from 'react';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 
+// Iconos personalizados para los marcadores
+const blueIcon = new L.Icon({
+  iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-blue.png',
+  shadowUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png',
+  iconSize: [25, 41],
+  iconAnchor: [12, 41],
+  popupAnchor: [1, -34],
+  shadowSize: [41, 41],
+});
+const greenIcon = new L.Icon({
+  iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-green.png',
+  shadowUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png',
+  iconSize: [25, 41],
+  iconAnchor: [12, 41],
+  popupAnchor: [1, -34],
+  shadowSize: [41, 41],
+});
+
 // Arreglar los iconos de Leaflet
 const fixLeafletIcon = () => {
   // Corregir los iconos de marcadores de Leaflet
@@ -110,35 +128,50 @@ const MapView: React.FC<MapViewProps> = ({ presetDestination = null }) => {
     );
   }
   return (
-    <div className="map-container" style={{ width: '100%', height: '100%' }}>
-      <MapContainer 
-        center={userPosition} 
-        zoom={14} 
-        style={{ width: '100%', height: '100%' }}
-        scrollWheelZoom={true}
-      >
-        <TileLayer
-          attribution='&copy; <a href="https://openstreetmap.org">OpenStreetMap</a> contributors'
-          url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-        />
-        <Marker position={userPosition}>
-          <Popup>
-            <b>Tu ubicación actual</b>
-          </Popup>
-        </Marker>
+    <div style={{ width: '100%', height: '100%' }}>
+      {/* Leyenda de colores */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: 16, marginBottom: 8 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+          <img src="https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-blue.png" alt="azul" style={{ width: 18, height: 28 }} />
+          <span style={{ fontSize: 14 }}>Tu ubicación</span>
+        </div>
         {destination && (
-          <Marker position={destination}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+            <img src="https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-green.png" alt="verde" style={{ width: 18, height: 28 }} />
+            <span style={{ fontSize: 14 }}>Ubicación del evento</span>
+          </div>
+        )}
+      </div>
+      <div className="map-container" style={{ width: '100%', height: 'calc(100% - 36px)' }}>
+        <MapContainer 
+          center={userPosition} 
+          zoom={14} 
+          style={{ width: '100%', height: '100%' }}
+          scrollWheelZoom={true}
+        >
+          <TileLayer
+            attribution='&copy; <a href="https://openstreetmap.org">OpenStreetMap</a> contributors'
+            url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+          />
+          <Marker position={userPosition} icon={blueIcon}>
             <Popup>
-              <b>Destino seleccionado</b>
-              <p>Lat: {destination[0].toFixed(6)}, Lng: {destination[1].toFixed(6)}</p>
+              Tú estás aquí
             </Popup>
           </Marker>
-        )}
-        {/* Mostrar la línea de la ruta si hay destino */}
-        {userPosition && destination && (
-          <RouteLine userPosition={userPosition} destination={destination} />
-        )}
-      </MapContainer>
+          {destination && (
+            <Marker position={destination} icon={greenIcon}>
+              <Popup>
+                Ubicación del evento<br />
+                Lat: {destination[0].toFixed(6)}, Lng: {destination[1].toFixed(6)}
+              </Popup>
+            </Marker>
+          )}
+          {/* Mostrar la línea de la ruta si hay destino */}
+          {userPosition && destination && (
+            <RouteLine userPosition={userPosition} destination={destination} />
+          )}
+        </MapContainer>
+      </div>
     </div>
   );
 };

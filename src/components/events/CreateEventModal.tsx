@@ -20,7 +20,6 @@ import {
   InputLabel,
   Select,
   CircularProgress,
-  Snackbar,
   IconButton,
 } from '@mui/material';
 import { useTheme } from '@mui/material/styles';
@@ -29,7 +28,8 @@ import EventIcon from '@mui/icons-material/Event';
 import SaveIcon from '@mui/icons-material/Save';
 import AddCircleOutlineIcon from '@mui/icons-material/AddCircleOutline';
 import DeleteIcon from '@mui/icons-material/Delete';
-import { apiAuth } from '../../api/api';
+import { eventEntityProvider } from '../../providers/eventEntity.provider';
+import { ticketCategoryProvider } from '../../providers/ticketCategory.provider';
 import LocationPicker from './LocationPicker';
 import type { ITicketCategory } from '../../types/ticketCategory.type';
 
@@ -65,6 +65,35 @@ interface TicketCategoryFormState {
 
 const steps = ['Información Básica', 'Detalles del Evento', 'Ubicación', 'Categorías de Boletos'];
 
+// Ciudades principales de Ecuador (organizadas por importancia)
+const ecuadorianCities = [
+  'Quito',
+  'Guayaquil', 
+  'Cuenca',
+  'Santo Domingo',
+  'Ambato',
+  'Machala',
+  'Manta',
+  'Portoviejo',
+  'Riobamba',
+  'Loja',
+  'Esmeraldas',
+  'Ibarra',
+  'Milagro',
+  'Babahoyo',
+  'La Libertad',
+  'Latacunga',
+  'Tulcán',
+  'Sangolquí',
+  'Azogues',
+  'Guaranda',
+  'Puyo',
+  'Tena',
+  'Macas',
+  'Nueva Loja',
+  'Zamora'
+];
+
 const initialFormData: EventFormData = {
   name: '',
   date: '',
@@ -83,7 +112,7 @@ const CreateEventModal: React.FC<CreateEventModalProps> = ({ open, onClose, onEv
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [formData, setFormData] = useState<EventFormData>(initialFormData);
-  const [successSnackbarOpen, setSuccessSnackbarOpen] = useState(false);
+
   const [createdEventId, setCreatedEventId] = useState<number | null>(null);
   const [ticketCategories, setTicketCategories] = useState<TicketCategoryFormState[]>([]);
   const [categoryErrors, setCategoryErrors] = useState<
@@ -146,9 +175,8 @@ const CreateEventModal: React.FC<CreateEventModalProps> = ({ open, onClose, onEv
       },
       // Step 1: Event Details
       () => {
-        if (!formData.city.trim()) return 'La ciudad del evento es requerida';
-        if (formData.city.trim().length < 3) return 'La ciudad debe tener al menos 3 caracteres.';
-        if (formData.city.trim().length > 50) return 'La ciudad no puede exceder los 50 caracteres.';
+        if (!formData.city || formData.city.trim() === '') return 'Debe seleccionar una ciudad';
+        if (!ecuadorianCities.includes(formData.city)) return 'La ciudad seleccionada no es válida';
         if (formData.capacity <= 0) return 'La capacidad debe ser mayor a 0';
         if (formData.capacity > 100000) return 'La capacidad máxima es de 100,000.';
         if (formData.description.length > 500) return 'La descripción no puede exceder los 500 caracteres.';
@@ -188,7 +216,7 @@ const CreateEventModal: React.FC<CreateEventModalProps> = ({ open, onClose, onEv
         idUser: identity.id,
       };
 
-      const response = await apiAuth.post('/event-entity', eventData);
+      const response = await eventEntityProvider.create('event-entity', { data: eventData });
       setCreatedEventId(response.data.id);
       setActiveStep((prev) => prev + 1);
     } catch (error: any) {
@@ -226,14 +254,12 @@ const CreateEventModal: React.FC<CreateEventModalProps> = ({ open, onClose, onEv
         eventId: createdEventId,
       }));
 
-      await apiAuth.post('/ticket-category', payload);
+      await ticketCategoryProvider.create('ticket-category', { data: payload });
 
-      setSuccessSnackbarOpen(true);
-      setTimeout(() => {
-        onEventCreated();
-        onClose();
-        handleReset();
-      }, 1500);
+      // Cerrar modal inmediatamente después de creación exitosa
+      onEventCreated();
+      onClose();
+      handleReset();
     } catch (error: any) {
       console.error('Error creating ticket categories:', error);
       if (error.response?.data?.message) {
@@ -378,13 +404,10 @@ const CreateEventModal: React.FC<CreateEventModalProps> = ({ open, onClose, onEv
 
   const handleClose = () => {
     handleReset();
-    setSuccessSnackbarOpen(false);
     onClose();
   };
 
-  const handleSuccessSnackbarClose = () => {
-    setSuccessSnackbarOpen(false);
-  };
+
 
   const renderStepContent = (step: number) => {
     const stepComponents = [
@@ -431,14 +454,26 @@ const CreateEventModal: React.FC<CreateEventModalProps> = ({ open, onClose, onEv
         spacing={3}
       >
         <Grid2 size={12}>
-          <TextField
+          <FormControl
             fullWidth
-            label="Ciudad"
-            value={formData.city}
-            onChange={(e) => handleInputChange('city', e.target.value)}
             variant="outlined"
-            helperText="Especifica la ciudad donde se realizará el evento"
-          />
+          >
+            <InputLabel>Ciudad</InputLabel>
+            <Select
+              value={formData.city}
+              onChange={(e) => handleInputChange('city', e.target.value)}
+              label="Ciudad"
+            >
+              <MenuItem value="">
+                <em>Selecciona una ciudad</em>
+              </MenuItem>
+              {ecuadorianCities.map((city) => (
+                <MenuItem key={city} value={city}>
+                  {city}
+                </MenuItem>
+              ))}
+            </Select>
+          </FormControl>
         </Grid2>
         <Grid2 size={12}>
           <TextField
@@ -789,7 +824,7 @@ const CreateEventModal: React.FC<CreateEventModalProps> = ({ open, onClose, onEv
                 },
               }}
             >
-              {loading ? 'Finalizando...' : 'Finalizar Creación'}
+              {loading ? 'Creando categorías...' : 'Finalizar Creación'}
             </Button>
           ) : activeStep === steps.length - 2 ? (
             <Button
@@ -821,31 +856,6 @@ const CreateEventModal: React.FC<CreateEventModalProps> = ({ open, onClose, onEv
           )}
         </DialogActions>
       </Dialog>
-
-      {/* Snackbar de éxito */}
-      <Snackbar
-        open={successSnackbarOpen}
-        autoHideDuration={6000}
-        onClose={handleSuccessSnackbarClose}
-        anchorOrigin={{ vertical: 'top', horizontal: 'center' }}
-      >
-        <Alert
-          onClose={handleSuccessSnackbarClose}
-          severity="success"
-          variant="filled"
-          sx={{
-            width: '100%',
-            borderRadius: 2,
-            fontWeight: 600,
-            fontSize: '1rem',
-            '& .MuiAlert-icon': {
-              fontSize: 24,
-            },
-          }}
-        >
-          🎉 ¡Evento creado exitosamente! Se está actualizando tu lista de eventos...
-        </Alert>
-      </Snackbar>
     </>
   );
 };

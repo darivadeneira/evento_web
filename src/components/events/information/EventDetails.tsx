@@ -119,65 +119,57 @@ const EventDetails = (props: any) => {
   const status = getEventStatus(state);  const content = (
     <Box
       sx={{
-        minHeight: '100vh',
+        position: 'fixed',
+        inset: 0,
+        display: 'flex',
+        flexDirection: 'column',
         bgcolor: 'background.default',
-        pt: { xs: 2, md: 3 },
-        pb: { xs: 2, md: 3 },
-        px: { xs: 2, md: 3 },
+        zIndex: 1200,
+        overflow: 'auto',
+        pt: `${APPBAR_HEIGHT + 16}px`,
       }}
     >
-      <Box
-        sx={{
-          maxWidth: '1400px',
-          mx: 'auto',
-          width: '100%',
-        }}
-      >
+
         <EventHeader name={name} status={status} />
-        <Box 
-          sx={{ 
+        <Box
+          sx={{
             mt: 3,
-            display: 'flex', 
-            flexDirection: 'column',
+            display: 'flex',
+            flexDirection: { xs: 'column', md: 'row' },
+            gap: { xs: 2, md: 3 },
+            width: '100%',
+            px: 10,
           }}
         >
-          <Box
+          <Paper
+            elevation={8}
             sx={{
-              display: 'flex',
-              flexDirection: { xs: 'column', md: 'row' },
-              gap: { xs: 2, md: 3 },
-              width: '100%',
+              flex: { xs: 'none', md: 2 },
+              width: { xs: '100%', md: 'auto' },
+              p: 3,
+              borderRadius: 3,
+              background: theme.palette.background.paper,
+              boxShadow: '0 10px 30px rgba(0,0,0,0.1)',
             }}
           >
-            <Paper
-              elevation={8}
-              sx={{
-                flex: { xs: 'none', md: 3 },
-                width: { xs: '100%', md: 'auto' },
-                p: 3,
-                borderRadius: 3,
-                background: theme.palette.background.paper,
-                boxShadow: '0 10px 30px rgba(0,0,0,0.1)',
-                mb: { xs: 2, md: 0 },
-              }}
-            >
-              <Typography variant="h4" fontWeight={600} gutterBottom color="text.primary">
-                Detalles del Evento
-              </Typography>
-              <Divider sx={{ mb: 3 }} />
-              <EventDetailsPanel date={date} hour={hour} capacity={capacity} description={description} />
-            </Paper>
-            <EventLocationPanel city={city} coordinates={coordinates} />
-            <TicketCategoriesPanel
-              ticketCategories={ticketCategories}
-              ticketQuantities={ticketQuantities}
-              incrementTicket={incrementTicket}
-              decrementTicket={decrementTicket}
-              totalAmount={totalAmount}
-            />
-          </Box>
+            <Typography variant="h4" fontWeight={600} gutterBottom color="text.primary">
+              Detalles del Evento
+            </Typography>
+            <Divider sx={{ mb: 3 }} />
+            <EventDetailsPanel date={date} hour={hour} capacity={capacity} description={description} />
+          </Paper>
+          <EventLocationPanel city={city} coordinates={coordinates} />
+          <TicketCategoriesPanel
+            ticketCategories={ticketCategories}
+            ticketQuantities={ticketQuantities}
+            incrementTicket={incrementTicket}
+            decrementTicket={decrementTicket}
+            totalAmount={totalAmount}
+            eventId={id}
+            eventName={name}
+          />
         </Box>
-      </Box>
+
     </Box>
   );
 

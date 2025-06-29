@@ -1,10 +1,13 @@
-import { Paper, Typography, Divider, Box, Chip, IconButton, Tooltip } from '@mui/material';
+import { Paper, Typography, Divider, Box, Chip, IconButton, Tooltip, Snackbar, Alert } from '@mui/material';
 import EventSeatIcon from '@mui/icons-material/EventSeat';
 import DateRangeIcon from '@mui/icons-material/DateRange';
 import AddIcon from '@mui/icons-material/Add';
 import RemoveIcon from '@mui/icons-material/Remove';
 import ShoppingCartIcon from '@mui/icons-material/ShoppingCart';
+import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import { useTheme } from '@mui/material/styles';
+import { useState } from 'react';
+import PurchaseModal from '../payment/PurchaseModal';
 
 interface TicketCategory {
   id: string;
@@ -23,10 +26,30 @@ interface TicketCategoriesPanelProps {
   incrementTicket: (categoryId: string, maxAvailable: number) => void;
   decrementTicket: (categoryId: string) => void;
   totalAmount: number;
+  eventId: string;
+  eventName: string;
 }
 
-const TicketCategoriesPanel = ({ ticketCategories, ticketQuantities, incrementTicket, decrementTicket, totalAmount }: TicketCategoriesPanelProps) => {
+const TicketCategoriesPanel = ({ ticketCategories, ticketQuantities, incrementTicket, decrementTicket, totalAmount, eventId, eventName }: TicketCategoriesPanelProps) => {
   const theme = useTheme();
+  const [purchaseModalOpen, setPurchaseModalOpen] = useState(false);
+  const [successSnackbarOpen, setSuccessSnackbarOpen] = useState(false);
+
+  const handlePurchaseClick = () => {
+    setPurchaseModalOpen(true);
+  };
+
+  const handlePurchaseComplete = () => {
+    // Mostrar notificación de éxito
+    setSuccessSnackbarOpen(true);
+    // Aquí puedes agregar lógica adicional después de una compra exitosa
+    // como recargar los datos del evento
+    console.log('Compra completada exitosamente');
+  };
+
+  const handleSuccessSnackbarClose = () => {
+    setSuccessSnackbarOpen(false);
+  };
   return (
     <Paper
       elevation={6}
@@ -104,12 +127,47 @@ const TicketCategoriesPanel = ({ ticketCategories, ticketQuantities, incrementTi
           sx={{ fontWeight: 'bold', fontSize: '1.1rem', px: 3, py: 2, borderRadius: 2, boxShadow: 2, width: '100%' }}
           clickable={totalAmount > 0}
           disabled={totalAmount <= 0}
-          onClick={() => {
-            // lógica de compra aquí
-            alert(`Comprando tickets por un total de $${totalAmount.toFixed(2)}`);
-          }}
+          onClick={handlePurchaseClick}
         />
       </Box>
+
+      {/* Modal de compra */}
+      <PurchaseModal
+        open={purchaseModalOpen}
+        onClose={() => setPurchaseModalOpen(false)}
+        onPurchaseComplete={handlePurchaseComplete}
+        eventId={eventId}
+        eventName={eventName}
+        ticketCategories={ticketCategories}
+        ticketQuantities={ticketQuantities}
+        totalAmount={totalAmount}
+      />
+
+      {/* Snackbar de éxito */}
+      <Snackbar
+        open={successSnackbarOpen}
+        autoHideDuration={4000}
+        onClose={handleSuccessSnackbarClose}
+        anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
+      >
+        <Alert
+          onClose={handleSuccessSnackbarClose}
+          severity="success"
+          variant="filled"
+          sx={{
+            width: '100%',
+            borderRadius: 2,
+            fontWeight: 600,
+            fontSize: '1rem',
+            '& .MuiAlert-icon': {
+              fontSize: 24,
+            },
+          }}
+          icon={<CheckCircleIcon />}
+        >
+          🎉 ¡Compra exitosa! Recibirás un email con los detalles de tu compra.
+        </Alert>
+      </Snackbar>
     </Paper>
   );
 };

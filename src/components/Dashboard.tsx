@@ -149,7 +149,6 @@ export const Dashboard = () => {
             display: 'flex',
             justifyContent: 'space-between',
             alignItems: 'center',
-            mb: 3,
             width: '100%',
           }}
         >
@@ -160,19 +159,6 @@ export const Dashboard = () => {
           >
             Cartelera de Eventos
           </Typography>
-          <Button
-            variant="contained"
-            color="primary"
-            endIcon={<EventIcon />}
-            sx={{
-              borderRadius: 2,
-              textTransform: 'none',
-              fontWeight: 500,
-              boxShadow: '0 4px 12px rgba(74, 255, 117, 0.2)',
-            }}
-          >
-            Ver todos los eventos
-          </Button>
         </Box>
 
         <Box

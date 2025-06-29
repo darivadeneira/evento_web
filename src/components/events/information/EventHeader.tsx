@@ -12,12 +12,14 @@ const EventHeader = ({ name, status }: EventHeaderProps) => {
       sx={{
         position: 'relative',
         borderRadius: 3,
-        overflow: 'hidden',
+        overflow: 'visible', // Cambiar a visible para evitar que se corte
         mb: 0,
         background: theme.palette.background.paper,
         boxShadow: '0 10px 30px rgba(0,0,0,0.15)',
-        py: { xs: 4, md: 5 },
-        px: { xs: 3, md: 4 },        // Bordes verdes con luminosidad reducida usando colores del tema
+        py: { xs: 3, md: 5 }, // Reducir padding vertical en móvil
+        px: { xs: 2, md: 4 }, // Reducir padding horizontal en móvil
+        mx: { xs: 1, md: 0 }, // Agregar margen horizontal en móvil
+        // Bordes verdes con luminosidad reducida usando colores del tema
         border: `1px solid ${theme.custom.greenBorder}`,
         filter: `drop-shadow(0 0 8px ${theme.custom.greenGlow})`,
         '&::before': {
@@ -33,63 +35,70 @@ const EventHeader = ({ name, status }: EventHeaderProps) => {
           filter: 'blur(2px)',
         },
       }}
-    ><Box
+    >      <Box
         sx={{
           display: 'flex',
-          flexDirection: { xs: 'column', md: 'row' },
+          flexDirection: 'column',
           alignItems: 'center',
-          gap: 2,
+          justifyContent: 'center',
+          gap: { xs: 1.5, md: 2 }, // Reducir gap en móvil
           width: '100%',
+          textAlign: 'center',
+          position: 'relative',
+          minHeight: { xs: 'auto', md: 'auto' }, // Asegurar altura mínima
         }}
       >
-        <Box sx={{ flex: 2 }}>
-          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
-            <Typography
-              variant="h2"
-              color="text.primary"
-              sx={{
-                fontWeight: 800,
-                fontSize: { xs: '2rem', md: '3.2rem' },
-                textShadow: '0 2px 10px rgba(0,0,0,0.3)',
-                lineHeight: 1.2,
-              }}
-            >
-              {name}
-            </Typography>
-            <Box sx={{ mt: 1 }}>
-              <Chip
-                label={status.label}
-                sx={{
-                  bgcolor: status.color,
-                  color: 'white',
-                  fontWeight: 'bold',
-                  fontSize: '0.9rem',
-                  py: 1,
-                  px: 2,
-                  borderRadius: 2,
-                }}
-              />
-            </Box>
-          </Box>
-        </Box>
-        <Box sx={{ flex: 1, display: 'flex', justifyContent: 'center' }}>
-          <Box sx={{ position: 'absolute', top: 16, right: 16 }}>
-            <a href="/" style={{ textDecoration: 'none' }}>
-              <Chip 
-                label="← Regresar" 
-                color="secondary" 
-                clickable 
-                sx={{ 
-                  fontWeight: 'bold', 
-                  px: 2, 
-                  py: 1,
-                  '&:hover': {
-                    backgroundColor: 'secondary.dark',
-                  }
-                }} 
-              />
-            </a>
-          </Box>
+        <Typography
+          variant="h2"
+          color="text.primary"
+          sx={{
+            fontWeight: 800,
+            fontSize: { xs: '1.75rem', sm: '2.25rem', md: '3.2rem' }, // Mejor escalado responsive
+            textShadow: '0 2px 10px rgba(0,0,0,0.3)',
+            lineHeight: 1.2,
+            mb: { xs: 0.5, md: 0 }, // Pequeño margen bottom en móvil
+          }}
+        >
+          {name}
+        </Typography>
+        <Chip
+          label={status.label}
+          sx={{
+            bgcolor: status.color,
+            color: 'white',
+            fontWeight: 'bold',
+            fontSize: { xs: '0.8rem', md: '0.9rem' }, // Responsive font size
+            py: { xs: 0.75, md: 1 }, // Menos padding en móvil
+            px: { xs: 1.5, md: 2 }, // Menos padding horizontal en móvil
+            borderRadius: 2,
+            minWidth: 'fit-content', // Se ajusta al contenido
+            whiteSpace: 'nowrap', // Evita que el texto se corte
+          }}
+        />
+        
+        {/* Botón regresar posicionado absolutamente */}
+        <Box sx={{ 
+          position: 'absolute', 
+          top: { xs: -12, md: -16 }, // Ajustar posición en móvil
+          right: { xs: -8, md: -16 }, // Ajustar posición en móvil
+          zIndex: 10, // Asegurar que esté por encima
+        }}>
+          <a href="/" style={{ textDecoration: 'none' }}>
+            <Chip 
+              label="← Regresar" 
+              color="secondary" 
+              clickable 
+              sx={{ 
+                fontWeight: 'bold', 
+                px: { xs: 1.5, md: 2 }, // Menos padding en móvil
+                py: { xs: 0.5, md: 1 }, // Menos padding en móvil
+                fontSize: { xs: '0.75rem', md: '0.875rem' }, // Más pequeño en móvil
+                '&:hover': {
+                  backgroundColor: 'secondary.dark',
+                }
+              }} 
+            />
+          </a>
         </Box>
       </Box>
     </Box>
