@@ -20,12 +20,18 @@ import {
   Divider,
   Chip,
   Paper,
+  Input,
+  FormHelperText,
 } from '@mui/material';
 import { useTheme } from '@mui/material/styles';
 import ShoppingCartIcon from '@mui/icons-material/ShoppingCart';
 import PaymentIcon from '@mui/icons-material/Payment';
 import PersonIcon from '@mui/icons-material/Person';
 import ReceiptIcon from '@mui/icons-material/Receipt';
+import CloudUploadIcon from '@mui/icons-material/CloudUpload';
+import AttachFileIcon from '@mui/icons-material/AttachFile';
+import QrCodeIcon from '@mui/icons-material/QrCode';
+import AccountBalanceIcon from '@mui/icons-material/AccountBalance';
 import { apiAuth } from '../../../api/api';
 
 interface TicketCategory {
@@ -56,6 +62,7 @@ interface PurchaseFormData {
   ownerLastname: string;
   ownerCi: string;
   paymentMethod: 'BANK_TRANSFER' | 'CREDIT_CARD' | 'PAYPAL';
+  voucher: File | null;
 }
 
 interface PurchaseTicketData {
@@ -68,7 +75,8 @@ const initialFormData: PurchaseFormData = {
   ownerName: '',
   ownerLastname: '',
   ownerCi: '',
-  paymentMethod: 'transaccion_bancaria',
+  paymentMethod: 'BANK_TRANSFER',
+  voucher: null,
 };
 
 const PurchaseModal: React.FC<PurchaseModalProps> = ({
@@ -88,9 +96,7 @@ const PurchaseModal: React.FC<PurchaseModalProps> = ({
   const [formErrors, setFormErrors] = useState<Partial<PurchaseFormData>>({});
 
   // Obtener solo las categorías con cantidad > 0
-  const selectedTickets = ticketCategories.filter(
-    (category) => ticketQuantities[category.id] > 0
-  );
+  const selectedTickets = ticketCategories.filter((category) => ticketQuantities[category.id] > 0);
 
   const validateForm = (): boolean => {
     const newErrors: Partial<PurchaseFormData> = {};
@@ -132,16 +138,43 @@ const PurchaseModal: React.FC<PurchaseModalProps> = ({
       isValid = false;
     }
 
+    // Voucher validation (ahora obligatorio)
+    if (!formData.voucher) {
+      setError('El comprobante de pago es obligatorio');
+      isValid = false;
+    }
+
     setFormErrors(newErrors);
     return isValid;
   };
 
   const handleInputChange = (field: keyof PurchaseFormData, value: string) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
-    
+
     // Clear error for this field when user starts typing
     if (formErrors[field]) {
       setFormErrors((prev) => ({ ...prev, [field]: undefined }));
+    }
+  };
+
+  const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (file) {
+      // Validar tipo de archivo
+      const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'application/pdf'];
+      if (!allowedTypes.includes(file.type)) {
+        setError('Solo se permiten archivos de imagen (JPG, PNG, GIF) o PDF');
+        return;
+      }
+
+      // Validar tamaño de archivo (5MB máximo)
+      if (file.size > 5 * 1024 * 1024) {
+        setError('El archivo no puede ser mayor a 5MB');
+        return;
+      }
+
+      setFormData((prev) => ({ ...prev, voucher: file }));
+      setError(''); // Limpiar error si el archivo es válido
     }
   };
 
@@ -178,14 +211,20 @@ const PurchaseModal: React.FC<PurchaseModalProps> = ({
         totalAmount: totalAmount,
       };
 
-      // Hacer la petición al API
-      await apiAuth.post('/transaction', purchaseData);
+      // Hacer la petición al API (siempre con FormData ya que el comprobante es obligatorio)
+      const formDataToSend = new FormData();
+      formDataToSend.append('voucher', formData.voucher as File);
+
+      const response = await apiAuth.post('/transaction', purchaseData, {});
+
+      const responseData = response.data;
+
+      await apiAuth.patch(`/transaction/${responseData.id}`, formDataToSend, {});
 
       // Cerrar modal inmediatamente después de compra exitosa
       onPurchaseComplete();
       onClose();
       handleReset();
-
     } catch (error: any) {
       console.error('Error processing purchase:', error);
       if (error.response?.data?.message) {
@@ -243,46 +282,80 @@ const PurchaseModal: React.FC<PurchaseModalProps> = ({
           }}
         >
           <ShoppingCartIcon sx={{ color: theme.palette.primary.main }} />
-          <Typography variant="h5" sx={{ fontWeight: 700 }}>
+          <Typography
+            variant="h5"
+            sx={{ fontWeight: 700 }}
+          >
             Comprar Entradas
           </Typography>
         </DialogTitle>
 
         <DialogContent sx={{ p: 4, backgroundColor: theme.palette.background.paper }}>
           {error && (
-            <Alert severity="error" sx={{ mb: 3, borderRadius: 2 }}>
+            <Alert
+              severity="error"
+              sx={{ mb: 3, borderRadius: 2 }}
+            >
               {error}
             </Alert>
           )}
 
-          <Grid2 container spacing={3}>
+          <Grid2
+            container
+            spacing={3}
+          >
             {/* Resumen del evento */}
             <Grid2 size={12}>
               <Card sx={{ mb: 3, border: `1px solid ${theme.palette.divider}`, borderRadius: 2 }}>
                 <CardContent>
-                  <Typography variant="h6" gutterBottom color="primary" sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                  <Typography
+                    variant="h6"
+                    gutterBottom
+                    color="primary"
+                    sx={{ display: 'flex', alignItems: 'center', gap: 1 }}
+                  >
                     <ReceiptIcon />
                     Resumen de la Compra
                   </Typography>
-                  <Typography variant="body1" sx={{ mb: 2 }}>
+                  <Typography
+                    variant="body1"
+                    sx={{ mb: 2 }}
+                  >
                     <strong>Evento:</strong> {eventName}
                   </Typography>
-                  
+
                   {/* Lista de entradas seleccionadas */}
                   <Box sx={{ mb: 2 }}>
-                    <Typography variant="subtitle2" sx={{ mb: 1 }}>
+                    <Typography
+                      variant="subtitle2"
+                      sx={{ mb: 1 }}
+                    >
                       Entradas seleccionadas:
                     </Typography>
                     {selectedTickets.map((category) => (
-                      <Paper key={category.id} sx={{ p: 2, mb: 1, bgcolor: 'background.default' }}>
+                      <Paper
+                        key={category.id}
+                        sx={{ p: 2, mb: 1, bgcolor: 'background.default' }}
+                      >
                         <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                           <Box>
-                            <Chip label={category.name} size="small" color="primary" sx={{ mr: 1 }} />
-                            <Typography variant="body2" display="inline">
+                            <Chip
+                              label={category.name}
+                              size="small"
+                              color="primary"
+                              sx={{ mr: 1 }}
+                            />
+                            <Typography
+                              variant="body2"
+                              display="inline"
+                            >
                               ${category.price} x {ticketQuantities[category.id]}
                             </Typography>
                           </Box>
-                          <Typography variant="body1" fontWeight="bold">
+                          <Typography
+                            variant="body1"
+                            fontWeight="bold"
+                          >
                             ${(category.price * ticketQuantities[category.id]).toFixed(2)}
                           </Typography>
                         </Box>
@@ -293,7 +366,11 @@ const PurchaseModal: React.FC<PurchaseModalProps> = ({
                   <Divider sx={{ my: 2 }} />
                   <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                     <Typography variant="h6">Total a Pagar:</Typography>
-                    <Typography variant="h5" fontWeight="bold" color="primary">
+                    <Typography
+                      variant="h5"
+                      fontWeight="bold"
+                      color="primary"
+                    >
                       ${totalAmount.toFixed(2)}
                     </Typography>
                   </Box>
@@ -305,12 +382,20 @@ const PurchaseModal: React.FC<PurchaseModalProps> = ({
             <Grid2 size={12}>
               <Card sx={{ border: `1px solid ${theme.palette.divider}`, borderRadius: 2 }}>
                 <CardContent>
-                  <Typography variant="h6" gutterBottom color="primary" sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 3 }}>
+                  <Typography
+                    variant="h6"
+                    gutterBottom
+                    color="primary"
+                    sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 3 }}
+                  >
                     <PersonIcon />
                     Información Personal
                   </Typography>
-                  
-                  <Grid2 container spacing={2}>
+
+                  <Grid2
+                    container
+                    spacing={2}
+                  >
                     <Grid2 size={12}>
                       <TextField
                         fullWidth
@@ -324,7 +409,7 @@ const PurchaseModal: React.FC<PurchaseModalProps> = ({
                         required
                       />
                     </Grid2>
-                    
+
                     <Grid2 size={{ xs: 12, md: 6 }}>
                       <TextField
                         fullWidth
@@ -337,7 +422,7 @@ const PurchaseModal: React.FC<PurchaseModalProps> = ({
                         required
                       />
                     </Grid2>
-                    
+
                     <Grid2 size={{ xs: 12, md: 6 }}>
                       <TextField
                         fullWidth
@@ -350,7 +435,7 @@ const PurchaseModal: React.FC<PurchaseModalProps> = ({
                         required
                       />
                     </Grid2>
-                    
+
                     <Grid2 size={{ xs: 12, md: 6 }}>
                       <TextField
                         fullWidth
@@ -364,9 +449,13 @@ const PurchaseModal: React.FC<PurchaseModalProps> = ({
                         inputProps={{ maxLength: 12 }}
                       />
                     </Grid2>
-                    
+
                     <Grid2 size={{ xs: 12, md: 6 }}>
-                      <FormControl fullWidth variant="outlined">
+                      <FormControl
+                        fullWidth
+                        variant="outlined"
+                        disabled
+                      >
                         <InputLabel>Método de Pago</InputLabel>
                         <Select
                           value={formData.paymentMethod}
@@ -374,11 +463,188 @@ const PurchaseModal: React.FC<PurchaseModalProps> = ({
                           label="Método de Pago"
                           startAdornment={<PaymentIcon sx={{ mr: 1, color: 'text.secondary' }} />}
                         >
-                          <MenuItem value="transaccion_bancaria">Transacción Bancaria</MenuItem>
-                          <MenuItem value="tarjeta_credito">Tarjeta de Crédito</MenuItem>
-                          <MenuItem value="paypal">PayPal</MenuItem>
+                          <MenuItem value="BANK_TRANSFER">Transacción Bancaria</MenuItem>
+                          <MenuItem value="CREDIT_CARD">Tarjeta de Crédito</MenuItem>
+                          <MenuItem value="PAYPAL">PayPal</MenuItem>
                         </Select>
                       </FormControl>
+                    </Grid2>
+
+                    <Grid2 size={12}>
+                      <Box sx={{ mt: 2 }}>
+                        {/* Información de transferencia bancaria con QR */}
+                        <Card
+                          sx={{
+                            mb: 3,
+                            border: `1px solid ${theme.palette.divider}`,
+                            borderRadius: 2,
+                            bgcolor: 'background.default',
+                          }}
+                        >
+                          <CardContent>
+                            <Typography
+                              variant="h6"
+                              gutterBottom
+                              sx={{ display: 'flex', alignItems: 'center', gap: 1, color: 'primary.main' }}
+                            >
+                              <AccountBalanceIcon />
+                              Datos para Transferencia Bancaria
+                            </Typography>
+
+                            <Grid2
+                              container
+                              spacing={2}
+                              alignItems="center"
+                            >
+                              <Grid2 size={{ xs: 12, md: 8 }}>
+                                <Box sx={{ color: 'text.primary' }}>
+                                  <Typography
+                                    variant="body1"
+                                    sx={{ mb: 1 }}
+                                  >
+                                    <strong>Banco:</strong> Banco Pichincha
+                                  </Typography>
+                                  <Typography
+                                    variant="body1"
+                                    sx={{ mb: 1 }}
+                                  >
+                                    <strong>Número de Cuenta:</strong> 7701143439
+                                  </Typography>
+                                  <Typography
+                                    variant="body1"
+                                    sx={{ mb: 1 }}
+                                  >
+                                    <strong>Tipo:</strong> Cuenta de Ahorros
+                                  </Typography>
+                                  <Typography
+                                    variant="body1"
+                                    sx={{ mb: 1 }}
+                                  >
+                                    <strong>Titular:</strong> EventosBoleteria S.A.
+                                  </Typography>
+                                  <Typography
+                                    variant="h6"
+                                    sx={{ mt: 2, color: 'primary.main' }}
+                                  >
+                                    <strong>Monto a transferir: ${totalAmount.toFixed(2)}</strong>
+                                  </Typography>
+                                </Box>
+                              </Grid2>
+
+                              <Grid2
+                                size={{ xs: 12, md: 4 }}
+                                sx={{ textAlign: 'center' }}
+                              >
+                                <Box
+                                  sx={{ p: 2, bgcolor: 'background.paper', borderRadius: 2, display: 'inline-block' }}
+                                >
+                                  <img
+                                    src="/Images/QR_pagos.jpg"
+                                    alt="QR Code para transferencia"
+                                    style={{
+                                      width: '120px',
+                                      height: '120px',
+                                      border: '2px solid #ccc',
+                                      borderRadius: '8px',
+                                    }}
+                                  />
+                                  <Typography
+                                    variant="caption"
+                                    sx={{ display: 'block', mt: 1, color: 'text.secondary' }}
+                                  >
+                                    <QrCodeIcon
+                                      fontSize="small"
+                                      sx={{ mr: 0.5 }}
+                                    />
+                                    Código QR para pago
+                                  </Typography>
+                                </Box>
+                              </Grid2>
+                            </Grid2>
+
+                            <Alert
+                              severity="info"
+                              sx={{ mt: 2 }}
+                            >
+                              <Typography variant="body2">
+                                📱 <strong>Instrucciones:</strong> Realiza la transferencia con los datos mostrados y
+                                sube el comprobante a continuación.
+                              </Typography>
+                            </Alert>
+                          </CardContent>
+                        </Card>
+
+                        <Typography
+                          variant="subtitle2"
+                          sx={{ mb: 1, display: 'flex', alignItems: 'center', gap: 1 }}
+                        >
+                          <CloudUploadIcon fontSize="small" />
+                          Comprobante de Pago (Obligatorio) *
+                        </Typography>
+                        {formData.voucher ? (
+                          <Box sx={{ display: 'flex', gap: 1, alignItems: 'center' }}>
+                            <Paper
+                              elevation={1}
+                              sx={{
+                                p: 2,
+                                flex: 1,
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: 1,
+                                bgcolor: 'success.light',
+                                color: 'success.contrastText',
+                                borderRadius: 2,
+                              }}
+                            >
+                              <AttachFileIcon fontSize="small" />
+                              <Typography
+                                variant="body2"
+                                sx={{ fontWeight: 500 }}
+                              >
+                                {formData.voucher.name}
+                              </Typography>
+                            </Paper>
+                            <Button
+                              variant="outlined"
+                              size="small"
+                              onClick={() => setFormData((prev) => ({ ...prev, voucher: null }))}
+                              sx={{ minWidth: 'auto', px: 2 }}
+                            >
+                              Eliminar
+                            </Button>
+                          </Box>
+                        ) : (
+                          <Button
+                            component="label"
+                            variant="outlined"
+                            startIcon={<AttachFileIcon />}
+                            sx={{
+                              width: '100%',
+                              height: 56,
+                              borderStyle: 'dashed',
+                              borderRadius: 2,
+                              textTransform: 'none',
+                              bgcolor: 'background.default',
+                              border: formData.voucher ? 'default' : `2px dashed ${theme.palette.error.main}`,
+                              '&:hover': {
+                                bgcolor: 'action.hover',
+                              },
+                            }}
+                          >
+                            Seleccionar comprobante (JPG, PNG, PDF - Max 5MB) *
+                            <Input
+                              type="file"
+                              onChange={handleFileChange}
+                              inputProps={{ accept: 'image/*,application/pdf' }}
+                              sx={{ display: 'none' }}
+                            />
+                          </Button>
+                        )}
+                        <FormHelperText sx={{ mt: 1, color: 'error.main' }}>
+                          * Campo obligatorio: Debes subir el comprobante de la transferencia bancaria para completar tu
+                          compra
+                        </FormHelperText>
+                      </Box>
                     </Grid2>
                   </Grid2>
                 </CardContent>
@@ -394,11 +660,11 @@ const PurchaseModal: React.FC<PurchaseModalProps> = ({
           >
             Cancelar
           </Button>
-          
+
           <Button
             variant="contained"
             onClick={handleSubmit}
-            disabled={loading || selectedTickets.length === 0}
+            disabled={loading || selectedTickets.length === 0 || !formData.voucher}
             startIcon={loading ? <CircularProgress size={20} /> : <ShoppingCartIcon />}
             sx={{
               borderRadius: 2,
@@ -411,7 +677,11 @@ const PurchaseModal: React.FC<PurchaseModalProps> = ({
               },
             }}
           >
-            {loading ? 'Procesando compra...' : `Comprar por $${totalAmount.toFixed(2)}`}
+            {loading
+              ? 'Procesando compra...'
+              : !formData.voucher
+                ? 'Subir comprobante para continuar'
+                : `Comprar por $${totalAmount.toFixed(2)}`}
           </Button>
         </DialogActions>
       </Dialog>
