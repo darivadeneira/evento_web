@@ -4,7 +4,7 @@ import { Login, SignUp } from "../api/cliente";
 export const authProvider: AuthProvider = {
   signup: async (userData: any) => {
     try {
-      const response = await SignUp("/auth/signup", userData, true);
+      const response = await SignUp("/user", userData, true);
       // Si la respuesta es 201, retorna status y mensaje
       if (response && response.status === 201) {
         return { status: 201, message: response.data?.message || "Cuenta creada con éxito" };

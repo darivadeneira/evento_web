@@ -94,8 +94,11 @@ export const SignUpPage = () => {
     setLoading(true);
     setFieldErrors({});
 
+    // Filtrar confirmPassword antes de enviar
+    const { confirmPassword, ...dataToSend } = finalData;
+
     const values = {
-      ...finalData,
+      ...dataToSend, // Ya no incluye confirmPassword
       rol: finalData.rol ? 'organizer' : 'user',
     };
 
