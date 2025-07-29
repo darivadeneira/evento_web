@@ -13,11 +13,13 @@ export const eventEntityProvider: DataProvider = {
         })
         const {data,count} = response.data;
         return {data: data, total: count}
-    },    getOne: async (resource, params: GetOneParams) => {
+    },    
+    getOne: async (resource, params: GetOneParams) => {
         try {
+            console.log("resource", resource, "params", params);
             const eventResponse = await apiAuth.get(`/${resource}/${params.id}`);
             // Obtener categorías de tickets para este evento
-            const ticketCategoriesResponse = await apiAuth.get(`/ticket-category/${params.id}`);
+            const ticketCategoriesResponse = await apiAuth.get(`/ticket-category/event/${params.id}`);
             
             // Combinar datos del evento con categorías de tickets
             return { 

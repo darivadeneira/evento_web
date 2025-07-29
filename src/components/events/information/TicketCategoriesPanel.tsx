@@ -6,8 +6,9 @@ import RemoveIcon from '@mui/icons-material/Remove';
 import ShoppingCartIcon from '@mui/icons-material/ShoppingCart';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import { useTheme } from '@mui/material/styles';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import PurchaseModal from '../payment/PurchaseModal';
+import socket from '../../../websocket/socket';
 
 interface TicketCategory {
   id: string;
@@ -20,30 +21,133 @@ interface TicketCategory {
   event_id: string;
 }
 
+interface IStockChangeItem {
+  ticketCategoryId: string;
+  available: number;
+}
+
+interface IStockChange {
+  eventId: number;
+  stockChange: IStockChangeItem[];
+}
+
 interface TicketCategoriesPanelProps {
   ticketCategories: TicketCategory[];
   ticketQuantities: Record<string, number>;
   incrementTicket: (categoryId: string, maxAvailable: number) => void;
   decrementTicket: (categoryId: string) => void;
+  resetTicketQuantities: () => void;
   totalAmount: number;
   eventId: string;
   eventName: string;
 }
 
-const TicketCategoriesPanel = ({ ticketCategories, ticketQuantities, incrementTicket, decrementTicket, totalAmount, eventId, eventName }: TicketCategoriesPanelProps) => {
+const TicketCategoriesPanel = ({ ticketCategories, ticketQuantities, incrementTicket, decrementTicket, resetTicketQuantities, totalAmount, eventId, eventName }: TicketCategoriesPanelProps) => {
   const theme = useTheme();
   const [purchaseModalOpen, setPurchaseModalOpen] = useState(false);
   const [successSnackbarOpen, setSuccessSnackbarOpen] = useState(false);
+  // Estado para los tickets disponibles por categoría
+  const [availableTicketsState, setAvailableTicketsState] = useState<Record<string, number>>({});
+
+  // Inicializar el estado de tickets disponibles al montar/cambiar ticketCategories
+  useEffect(() => {
+    const initialAvailable: Record<string, number> = {};
+    ticketCategories.forEach((cat) => {
+      initialAvailable[cat.id] = cat.availableTickets;
+    });
+    setAvailableTicketsState(initialAvailable);
+
+    // Escuchar evento stockChange por websocket
+    const handleStockChange = (data: { eventId: number; stockChange: { ticketCategoryId: string | number; available: number }[] }) => {
+      if (parseInt(eventId) === data.eventId) {
+        setAvailableTicketsState((prev) => {
+          const updated = { ...prev };
+          data.stockChange.forEach((item) => {
+            updated[item.ticketCategoryId.toString()] = item.available;
+          });
+          return updated;
+        });
+      }
+    };
+    socket.on('stockChange', handleStockChange);
+    return () => {
+      socket.off('stockChange', handleStockChange);
+    };
+  }, [ticketCategories, eventId]);
+
+  const handleIncrementTicket = (categoryId: string, maxAvailable: number) => {
+    const selected = ticketQuantities[categoryId] || 0;
+    const available = availableTicketsState[categoryId] ?? maxAvailable;
+
+    if ((available - selected) > 0) {
+      incrementTicket(categoryId, maxAvailable);
+    }
+  };
+
+  const handleDecrementTicket = (categoryId: string) => {
+    if ((ticketQuantities[categoryId] || 0) > 0) {
+      decrementTicket(categoryId);
+    }
+  };
+
 
   const handlePurchaseClick = () => {
     setPurchaseModalOpen(true);
+
+    let notifyStockChange: IStockChange = {
+      eventId: parseInt(eventId),
+      stockChange: []
+    };
+
+    ticketCategories.forEach((category: TicketCategory) => {
+      const available = availableTicketsState[category.id];
+      const ticketSelected = ticketQuantities[category.id] || 0;
+      if (ticketSelected > 0) {
+        notifyStockChange.stockChange.push({
+          ticketCategoryId: category.id,
+          available: available - ticketSelected,
+        });
+      }
+    });
+
+    console.log("Stock change to notify:", notifyStockChange);
+    socket.emit('notifyStockChange', notifyStockChange);
   };
 
+  const handleCancelPurchase = () => {
+    let notifyStockChange: IStockChange = {
+      eventId: parseInt(eventId),
+      stockChange: []
+    };
+
+    setAvailableTicketsState((prev) => {
+      const updated: Record<string, number> = { ...prev };
+
+      ticketCategories.forEach((category) => {
+        const selected = ticketQuantities[category.id] || 0;
+        const newAvailable = (updated[category.id] ?? category.availableTickets) + selected;
+
+        updated[category.id] = newAvailable;
+
+        if (selected > 0) {
+          notifyStockChange.stockChange.push({
+            ticketCategoryId: category.id,
+            available: newAvailable,
+          });
+        }
+      });
+
+      return updated;
+    });
+
+    socket.emit('notifyStockChange', notifyStockChange);
+    resetTicketQuantities();
+    setPurchaseModalOpen(false);
+  };
+
+
   const handlePurchaseComplete = () => {
-    // Mostrar notificación de éxito
     setSuccessSnackbarOpen(true);
-    // Aquí puedes agregar lógica adicional después de una compra exitosa
-    // como recargar los datos del evento
     console.log('Compra completada exitosamente');
   };
 
@@ -89,7 +193,9 @@ const TicketCategoriesPanel = ({ ticketCategories, ticketQuantities, incrementTi
               <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1 }}>
                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
                   <EventSeatIcon fontSize="small" color="primary" />
-                  <Typography variant="body2">{category.availableTickets} disponibles</Typography>
+                  <Typography variant="body2">
+                    {(availableTicketsState[category.id] ?? category.availableTickets) - (ticketQuantities[category.id] || 0)} disponibles
+                  </Typography>
                 </Box>
                 {category.start_date && category.end_date && (
                   <Tooltip title={`Válido: ${category.start_date} - ${category.end_date}`}>
@@ -98,11 +204,15 @@ const TicketCategoriesPanel = ({ ticketCategories, ticketQuantities, incrementTi
                 )}
               </Box>
               <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mt: 1, justifyContent: 'flex-end' }}>
-                <IconButton onClick={() => decrementTicket(category.id)} color="primary" size="small" sx={{ bgcolor: 'action.hover' }}>
+                <IconButton onClick={() => handleDecrementTicket(category.id)} color="primary" size="small" sx={{ bgcolor: 'action.hover' }} disabled={(ticketQuantities[category.id] || 0) === 0}>
                   <RemoveIcon />
                 </IconButton>
                 <Typography variant="h6" sx={{ minWidth: 30, textAlign: 'center' }}>{ticketQuantities[category.id] || 0}</Typography>
-                <IconButton onClick={() => incrementTicket(category.id, category.availableTickets)} color="primary" size="small" sx={{ bgcolor: 'action.hover' }} disabled={ticketQuantities[category.id] >= category.availableTickets}>
+                <IconButton onClick={() => handleIncrementTicket(category.id, category.availableTickets)} color="primary" size="small" sx={{ bgcolor: 'action.hover' }}
+                  disabled={
+                    ((availableTicketsState[category.id] ?? category.availableTickets) - (ticketQuantities[category.id] || 0)) <= 0
+                  }
+                >
                   <AddIcon />
                 </IconButton>
               </Box>
@@ -134,7 +244,7 @@ const TicketCategoriesPanel = ({ ticketCategories, ticketQuantities, incrementTi
       {/* Modal de compra */}
       <PurchaseModal
         open={purchaseModalOpen}
-        onClose={() => setPurchaseModalOpen(false)}
+        onClose={handleCancelPurchase}
         onPurchaseComplete={handlePurchaseComplete}
         eventId={eventId}
         eventName={eventName}

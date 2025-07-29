@@ -76,6 +76,10 @@ const EventDetails = (props: any) => {
     });
   };
 
+  const resetTicketQuantities = () => {
+    setTicketQuantities({});
+  }
+
   const APPBAR_HEIGHT = 30; // Ajusta si tu AppBar es más alto
 
   if (isLoading || !record) {
@@ -164,6 +168,7 @@ const EventDetails = (props: any) => {
             ticketQuantities={ticketQuantities}
             incrementTicket={incrementTicket}
             decrementTicket={decrementTicket}
+            resetTicketQuantities={resetTicketQuantities}
             totalAmount={totalAmount}
             eventId={id}
             eventName={name}
