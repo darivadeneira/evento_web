@@ -43,10 +43,8 @@ interface EventFormData {
   name: string;
   date: string;
   hour: string;
-  location: {
-    type: 'Point';
-    coordinates: [number, number];
-  } | null;
+  latitude: number | null;
+  longitude: number | null;
   city: string;
   description: string;
   capacity: number;
@@ -98,7 +96,8 @@ const initialFormData: EventFormData = {
   name: '',
   date: '',
   hour: '',
-  location: null,
+  latitude: null,
+  longitude: null,
   city: '',
   description: '',
   capacity: 0,
@@ -145,7 +144,8 @@ const CreateEventModal: React.FC<CreateEventModalProps> = ({ open, onClose, onEv
 
     setFormData((prev) => ({
       ...prev,
-      location: isValidLocation ? { type: 'Point', coordinates } : null,
+      latitude: isValidLocation ? coordinates[0] : null,
+      longitude: isValidLocation ? coordinates[1] : null,
     }));
   };
 
@@ -184,8 +184,8 @@ const CreateEventModal: React.FC<CreateEventModalProps> = ({ open, onClose, onEv
       },
       // Step 2: Location
       () => {
-        const hasValidLocation =
-          formData.location && !(formData.location.coordinates[0] === 0 && formData.location.coordinates[1] === 0);
+        const hasValidLocation = formData.latitude !== null && formData.longitude !== null &&
+          !(formData.latitude === 0 && formData.longitude === 0);
         if (!hasValidLocation) return 'Debe seleccionar una ubicación válida en el mapa';
         return null;
       },
@@ -213,7 +213,7 @@ const CreateEventModal: React.FC<CreateEventModalProps> = ({ open, onClose, onEv
       const eventData = {
         ...formData,
         description: formData.description || '',
-        idUser: identity.id,
+        userId: identity.id,
       };
 
       const response = await eventEntityProvider.create('event-entity', { data: eventData });
@@ -544,7 +544,8 @@ const CreateEventModal: React.FC<CreateEventModalProps> = ({ open, onClose, onEv
           </Typography>
           <LocationPicker
             onLocationSelect={handleLocationSelect}
-            selectedLocation={formData.location?.coordinates}
+            selectedLocation={formData.latitude !== null && formData.longitude !== null ? 
+              [formData.latitude, formData.longitude] : undefined}
           />
         </Box>
       ),

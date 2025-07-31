@@ -57,7 +57,7 @@ function TabPanel(props: TabPanelProps) {
       aria-labelledby={`organizer-tab-${index}`}
       {...other}
     >
-      {value === index && <Box sx={{ p: 3 }}>{children}</Box>}
+      {value === index && <Box sx={{ p: { xs: 2, sm: 3, md: 2, lg: 3 } }}>{children}</Box>}
     </div>
   );
 }
@@ -94,7 +94,7 @@ const OrganizerEvents: React.FC = () => {
       // Llamada especial al dataprovider para obtener eventos del organizador
       const response = await apiAuth.post('/event-entity/paginated', {
         rowsPage: 10,
-        filter: { state: 'active', idUser: identity?.id },
+        filter: { state: 'active', userId: identity?.id },
         order: 'DESC',
         orderBy: 'id',
       });
@@ -177,13 +177,19 @@ const OrganizerEvents: React.FC = () => {
     <Box
       sx={{
         minHeight: '100vh',
+        width: '100%',
         background: `linear-gradient(135deg, ${theme.palette.background.default} 0%, rgba(74, 255, 117, 0.02) 100%)`,
         pb: 4,
       }}
     >
       <Container
-        maxWidth="xl"
-        sx={{ py: 3 }}
+        maxWidth={false}
+        sx={{ 
+          py: 3,
+          px: { xs: 2, sm: 3, md: 2, lg: 3, xl: 4 },
+          width: '100%',
+          maxWidth: 'calc(100vw - 32px)', // Evita scroll horizontal
+        }}
       >
         {/* Header Hero Section */}
         <Card
@@ -681,7 +687,8 @@ const OrganizerEvents: React.FC = () => {
                       xs={12}
                       sm={6}
                       md={4}
-                      lg={4}
+                      lg={3}
+                      xl={2.4}
                       key={event.id}
                     >
                       <EventCard

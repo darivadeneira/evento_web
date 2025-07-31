@@ -30,7 +30,7 @@ export const ticketCategoryProvider: DataProvider = {
     },
     create: async (resource, params) => {
         try {
-            const response = await apiAuth.post(`/${resource}`, params.data);
+            const response = await apiAuth.post(`/${resource}/multiple`, params.data);
             return { data: response.data };
         } catch (error) {
             return Promise.reject(error);

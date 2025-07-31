@@ -103,8 +103,7 @@ const EventDetails = (props: any) => {
     );
   }
 
-  const { name, date, hour, location, city, description, capacity, state, ticketCategories = [] } = record;
-  const coordinates = location?.coordinates;
+  const { name, date, hour, latitude, longitude, city, description, capacity, state, ticketCategories = [] } = record;
   const totalAmount = calculateTotal();
 
   const getEventStatus = (state: string) => {
@@ -162,7 +161,7 @@ const EventDetails = (props: any) => {
             <Divider sx={{ mb: 3 }} />
             <EventDetailsPanel date={date} hour={hour} capacity={capacity} description={description} />
           </Paper>
-          <EventLocationPanel city={city} coordinates={coordinates} />
+          <EventLocationPanel city={city} latitude={latitude} longitude={longitude} />
           <TicketCategoriesPanel
             ticketCategories={ticketCategories}
             ticketQuantities={ticketQuantities}
