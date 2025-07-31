@@ -75,6 +75,18 @@ const TicketCategoriesPanel = ({ ticketCategories, ticketQuantities, incrementTi
     };
   }, [ticketCategories, eventId]);
 
+  useEffect(() => {
+    const handleBeforeUnload = (e: BeforeUnloadEvent) => {
+      if (purchaseModalOpen) {
+        handleCancelPurchase();
+      }
+    };
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    return () => {
+      window.removeEventListener('beforeunload', handleBeforeUnload);
+    };
+  }, [purchaseModalOpen]);
+
   const handleIncrementTicket = (categoryId: string, maxAvailable: number) => {
     const selected = ticketQuantities[categoryId] || 0;
     const available = availableTicketsState[categoryId] ?? maxAvailable;
