@@ -125,7 +125,7 @@ const LocationPickerMap: React.FC<LocationPickerMapProps> = ({
   // Determinar el centro del mapa
   const currentCenter =
     selectedLocation && selectedLocation[0] !== 0 && selectedLocation[1] !== 0
-      ? ([selectedLocation[1], selectedLocation[0]] as [number, number]) // [lat, lng] para el mapa
+      ? ([selectedLocation[0], selectedLocation[1]] as [number, number]) // [lat, lng] para el mapa
       : mapCenter;
 
   return (

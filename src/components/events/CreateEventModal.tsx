@@ -144,8 +144,8 @@ const CreateEventModal: React.FC<CreateEventModalProps> = ({ open, onClose, onEv
 
     setFormData((prev) => ({
       ...prev,
-      latitude: isValidLocation ? coordinates[0] : null,
-      longitude: isValidLocation ? coordinates[1] : null,
+      longitude: isValidLocation ? coordinates[0] : null,
+      latitude: isValidLocation ? coordinates[1] : null,
     }));
   };
 
@@ -545,7 +545,7 @@ const CreateEventModal: React.FC<CreateEventModalProps> = ({ open, onClose, onEv
           <LocationPicker
             onLocationSelect={handleLocationSelect}
             selectedLocation={formData.latitude !== null && formData.longitude !== null ? 
-              [formData.latitude, formData.longitude] : undefined}
+              [formData.longitude, formData.latitude] : undefined}
           />
         </Box>
       ),
