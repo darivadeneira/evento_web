@@ -46,7 +46,8 @@ const EventDetails = (props: any) => {
 
   // Inicializar las cantidades de tickets cuando se cargan las categorías
   useEffect(() => {
-    if (record?.ticketCategories) {
+    if (record?.ticketCategories && Object.keys(ticketQuantities).length === 0) {
+      // Solo inicializar si no hay cantidades ya establecidas
       const initialQuantities: Record<string, number> = {};
       record.ticketCategories.forEach((category: TicketCategory) => {
         initialQuantities[category.id] = 0;
@@ -54,6 +55,17 @@ const EventDetails = (props: any) => {
       setTicketQuantities(initialQuantities);
     }
   }, [record?.ticketCategories]);
+
+  // Función mejorada para resetear cantidades cuando sea necesario
+  const resetTicketQuantities = () => {
+    if (record?.ticketCategories) {
+      const resetQuantities: Record<string, number> = {};
+      record.ticketCategories.forEach((category: TicketCategory) => {
+        resetQuantities[category.id] = 0;
+      });
+      setTicketQuantities(resetQuantities);
+    }
+  };
 
   // Funciones para incrementar y decrementar tickets
   const incrementTicket = (categoryId: string, maxAvailable: number) => {
@@ -75,10 +87,6 @@ const EventDetails = (props: any) => {
       return prev;
     });
   };
-
-  const resetTicketQuantities = () => {
-    setTicketQuantities({});
-  }
 
   const APPBAR_HEIGHT = 30; // Ajusta si tu AppBar es más alto
 
