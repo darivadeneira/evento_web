@@ -46,8 +46,13 @@ export const eventEntityProvider: DataProvider = {
             return Promise.reject(error);
         }
     },
-    update: async () => {
-        return Promise.reject(new Error("Not implemented"));
+    update: async (resource, params) => {
+        try {
+            const response = await apiAuth.patch(`/${resource}/${params.id}`, params.data);
+            return { data: response.data };
+        } catch (error) {
+            return Promise.reject(error);
+        }
     },
     updateMany: async () => {
         return Promise.reject(new Error("Not implemented"));

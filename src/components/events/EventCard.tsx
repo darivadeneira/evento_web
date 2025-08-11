@@ -1,7 +1,8 @@
-import { Card, CardContent, Typography, Chip, Button, Box } from '@mui/material';
+import { Card, CardContent, Typography, Chip, Button, Box, IconButton } from '@mui/material';
 import CalendarMonthIcon from '@mui/icons-material/CalendarMonth';
 import LocationOnIcon from '@mui/icons-material/LocationOn';
 import PeopleIcon from '@mui/icons-material/People';
+import EditIcon from '@mui/icons-material/Edit';
 import { DateField } from 'react-admin';
 import React from 'react';
 import type { IEvent } from '../../types/event.type';
@@ -10,9 +11,10 @@ import { useNavigate } from 'react-router-dom';
 interface EventCardProps {
   event: IEvent;
   admin: boolean;
+  onEditEvent?: (eventId: number) => void;
 }
 
-const EventCard: React.FC<EventCardProps> = ({ event, admin = false }) => {
+const EventCard: React.FC<EventCardProps> = ({ event, admin = false, onEditEvent }) => {
   const navigate = useNavigate();    
   const getEventStatus = (event: IEvent) => {
     // Considerar evento en progreso si la fecha es hoy y la hora ya pasó pero no ha terminado (simple: 4h de duración)
@@ -135,6 +137,20 @@ const EventCard: React.FC<EventCardProps> = ({ event, admin = false }) => {
             >
               Detalles
             </Button>
+            {admin && onEditEvent && (
+              <IconButton
+                onClick={() => onEditEvent(event.id)}
+                sx={{
+                  backgroundColor: 'primary.main',
+                  color: 'white',
+                  '&:hover': {
+                    backgroundColor: 'primary.dark',
+                  },
+                }}
+              >
+                <EditIcon />
+              </IconButton>
+            )}
             {/* {!admin && (
               <Button
                 variant="contained"

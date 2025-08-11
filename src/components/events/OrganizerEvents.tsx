@@ -14,7 +14,6 @@ import {
   Paper,
   Fab,
   Stack,
-  Divider,
   LinearProgress,
   IconButton,
   Badge,
@@ -38,6 +37,7 @@ import EditIcon from '@mui/icons-material/Edit';
 import { apiAuth } from '../../api/api';
 import EventCard from './EventCard';
 import CreateEventModal from './CreateEventModal';
+import EditEventModal from './EditEventModal';
 import type { IEvent } from '../../types/event.type';
 
 interface TabPanelProps {
@@ -76,13 +76,16 @@ const OrganizerEvents: React.FC = () => {
   const [events, setEvents] = useState<IEvent[]>([]);
   const [loading, setLoading] = useState(false);
   const [createModalOpen, setCreateModalOpen] = useState(false);
+  const [editModalOpen, setEditModalOpen] = useState(false);
+  const [selectedEventId, setSelectedEventId] = useState<number | null>(null);
   const [eventCreatedSnackbar, setEventCreatedSnackbar] = useState(false);
+  const [eventUpdatedSnackbar, setEventUpdatedSnackbar] = useState(false);
 
   const initials = identity
     ? `${identity?.name?.charAt(0).toUpperCase()}${identity?.lastname?.charAt(0).toUpperCase()}`
     : 'UN';
 
-  const handleTabChange = (event: React.SyntheticEvent, newValue: number) => {
+  const handleTabChange = (_: React.SyntheticEvent, newValue: number) => {
     setTabValue(newValue);
   };
 
@@ -136,6 +139,25 @@ const OrganizerEvents: React.FC = () => {
 
   const handleEventCreatedSnackbarClose = () => {
     setEventCreatedSnackbar(false);
+  };
+
+  const handleEditEvent = (eventId: number) => {
+    setSelectedEventId(eventId);
+    setEditModalOpen(true);
+  };
+
+  const handleEventUpdated = () => {
+    // Mostrar notificación
+    setEventUpdatedSnackbar(true);
+    
+    // Recargar la lista de eventos después de actualizar
+    setTimeout(() => {
+      fetchOrganizerEvents();
+    }, 500);
+  };
+
+  const handleEventUpdatedSnackbarClose = () => {
+    setEventUpdatedSnackbar(false);
   };
 
   // Métricas simuladas - en el futuro vienen de la API
@@ -677,27 +699,46 @@ const OrganizerEvents: React.FC = () => {
                   </Typography>
                 </Box>
               ) : events.length > 0 ? (
-                <Grid
-                  container
-                  spacing={3}
-                >
-                  {events.map((event) => (
-                    <Grid
-                      item
-                      xs={12}
-                      sm={6}
-                      md={4}
-                      lg={3}
-                      xl={2.4}
-                      key={event.id}
-                    >
-                      <EventCard
-                        event={event}
-                        admin={true}
-                      />
-                    </Grid>
-                  ))}
-                </Grid>
+                <Box sx={{ 
+                  p: { xs: 2, sm: 3, md: 4 },
+                  width: '100%'
+                }}>
+                  <Box
+                    sx={{
+                      display: 'flex',
+                      flexWrap: 'wrap',
+                      gap: { xs: 3, sm: 4, md: 5, lg: 6 },
+                      justifyContent: 'center',
+                      alignItems: 'flex-start',
+                      width: '100%'
+                    }}
+                  >
+                    {events.map((event) => (
+                      <Box
+                        key={event.id}
+                        sx={{
+                          flexBasis: {
+                            xs: '100%',
+                            sm: 'calc(50% - 16px)',
+                            md: 'calc(50% - 20px)',
+                            lg: 'calc(33.333% - 24px)',
+                            xl: 'calc(25% - 24px)'
+                          },
+                          minWidth: { xs: '280px', sm: '300px', md: '320px' },
+                          maxWidth: { xs: '100%', sm: '400px', md: '380px', lg: '350px' },
+                          flexGrow: 0,
+                          flexShrink: 0
+                        }}
+                      >
+                        <EventCard
+                          event={event}
+                          admin={true}
+                          onEditEvent={handleEditEvent}
+                        />
+                      </Box>
+                    ))}
+                  </Box>
+                </Box>
               ) : (
                 <Box
                   sx={{
@@ -792,6 +833,14 @@ const OrganizerEvents: React.FC = () => {
           onEventCreated={handleEventCreated}
         />
 
+        {/* Modal de editar evento */}
+        <EditEventModal
+          open={editModalOpen}
+          onClose={() => setEditModalOpen(false)}
+          onEventUpdated={handleEventUpdated}
+          eventId={selectedEventId || 0}
+        />
+
         {/* Snackbar de confirmación adicional */}
         <Snackbar
           open={eventCreatedSnackbar}
@@ -811,6 +860,28 @@ const OrganizerEvents: React.FC = () => {
             }}
           >
             ✅ Tu evento ya está disponible en la plataforma
+          </Alert>
+        </Snackbar>
+
+        {/* Snackbar de evento actualizado */}
+        <Snackbar
+          open={eventUpdatedSnackbar}
+          autoHideDuration={4000}
+          onClose={handleEventUpdatedSnackbarClose}
+          anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
+        >
+          <Alert
+            onClose={handleEventUpdatedSnackbarClose}
+            severity="success"
+            variant="filled"
+            sx={{
+              width: '100%',
+              borderRadius: 2,
+              fontWeight: 600,
+              boxShadow: theme.shadows[6],
+            }}
+          >
+            ✅ El evento ha sido actualizado correctamente
           </Alert>
         </Snackbar>
       </Container>
