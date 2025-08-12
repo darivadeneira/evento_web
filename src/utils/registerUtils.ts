@@ -43,8 +43,11 @@ export const validateEmail = (value: any) => {
   if (!value || (typeof value === 'string' && value.trim() === '')) {
     return 'El correo electrónico es requerido';
   }
-  const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.(com|net|org|edu|gov)$/i;
-  return !emailRegex.test(value) ? 'Formato de correo electrónico inválido' : undefined;
+  // Solo permitir correos de Gmail
+  const emailRegex = /^[a-zA-Z0-9._%+-]+@gmail\.com$/i;
+  return !emailRegex.test(value)
+    ? 'Solo se permite un correo Gmail (@gmail.com)'
+    : undefined;
 };
 
 // Función principal de validación del formulario
@@ -54,9 +57,9 @@ export const validateRegistrationForm = (values: any, step: number, termsAccepte
 
   if (step === 0) {
     // Email
-    const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.(com|net|org|edu|gov)$/i;
+    const emailRegex = /^[a-zA-Z0-9._%+-]+@gmail\.com$/i;
     if (!values.email || !emailRegex.test(values.email)) {
-      errors.push('Formato de correo electrónico inválido');
+      errors.push('Solo se permite un correo Gmail (@gmail.com)');
     } else {
       validation.email = true;
     }
