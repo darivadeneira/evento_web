@@ -138,21 +138,75 @@ export const validateRegistrationForm = (values: any, step: number, termsAccepte
 export const mapErrorsToFields = (errors: string[]): Record<string, string> => {
   const fieldMap: Record<string, string> = {};
   const mappings = [
-    { keywords: ['correo', 'email'], field: 'email' },
-    { keywords: ['contraseña'], field: 'password' },
-    { keywords: ['coinciden'], field: 'confirmPassword' },
-    { keywords: ['nombre de usuario'], field: 'username' },
-    { keywords: ['apellido'], field: 'lastname' },
-    { keywords: ['nombre'], field: 'name' },
-    { keywords: ['tel'], field: 'phone' },
+    { keywords: ['correo', 'email', 'e-mail'], field: 'email' },
+    { keywords: ['contraseña', 'password'], field: 'password' },
+    { keywords: ['coinciden', 'match', 'confirmación'], field: 'confirmPassword' },
+    { keywords: ['nombre de usuario', 'username', 'usuario'], field: 'username' },
+    { keywords: ['apellido', 'lastname'], field: 'lastname' },
+    { keywords: ['nombre', 'name'], field: 'name' },
+    { keywords: ['teléfono', 'telefono', 'phone'], field: 'phone' },
+    { keywords: ['términos', 'terminos', 'condiciones'], field: 'terms' },
   ];
 
   errors.forEach((err) => {
-    const mapping = mappings.find((m) => m.keywords.some((keyword) => err.toLowerCase().includes(keyword)));
+    const mapping = mappings.find((m) => 
+      m.keywords.some((keyword) => err.toLowerCase().includes(keyword.toLowerCase()))
+    );
     if (mapping) {
       fieldMap[mapping.field] = err;
     }
   });
 
   return fieldMap;
+};
+
+// Función para mapear errores específicos del servidor
+export const mapServerErrorToField = (errorMessage: string): { field?: string; message: string } => {
+  const lowerMessage = errorMessage.toLowerCase();
+  
+  // Patrones específicos para diferentes tipos de errores
+  const patterns = [
+    {
+      keywords: ['email', 'correo'],
+      checks: [
+        { pattern: ['existe', 'already exists', 'taken'], field: 'email', message: 'Este correo electrónico ya está registrado' },
+        { pattern: ['inválido', 'invalid', 'formato'], field: 'email', message: 'Formato de correo electrónico inválido' },
+      ]
+    },
+    {
+      keywords: ['username', 'usuario'],
+      checks: [
+        { pattern: ['existe', 'already exists', 'taken'], field: 'username', message: 'Este nombre de usuario ya está registrado' },
+        { pattern: ['inválido', 'invalid', 'formato'], field: 'username', message: 'Formato de nombre de usuario inválido' },
+      ]
+    },
+    {
+      keywords: ['phone', 'teléfono', 'telefono'],
+      checks: [
+        { pattern: ['existe', 'already exists', 'taken'], field: 'phone', message: 'Este número telefónico ya está registrado' },
+        { pattern: ['inválido', 'invalid', 'formato'], field: 'phone', message: 'Formato de número telefónico inválido' },
+      ]
+    },
+    {
+      keywords: ['password', 'contraseña'],
+      checks: [
+        { pattern: ['débil', 'weak', 'insecure'], field: 'password', message: 'La contraseña no cumple con los requisitos de seguridad' },
+        { pattern: ['corta', 'short', 'mínimo'], field: 'password', message: 'La contraseña debe tener al menos 8 caracteres' },
+      ]
+    }
+  ];
+
+  // Buscar coincidencias
+  for (const category of patterns) {
+    if (category.keywords.some(keyword => lowerMessage.includes(keyword))) {
+      for (const check of category.checks) {
+        if (check.pattern.some(pattern => lowerMessage.includes(pattern))) {
+          return { field: check.field, message: check.message };
+        }
+      }
+    }
+  }
+
+  // Si no se encuentra un patrón específico, devolver el mensaje original
+  return { message: errorMessage };
 };

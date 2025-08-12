@@ -45,12 +45,14 @@ import {
   validateEmail,
   validateRegistrationForm,
   mapErrorsToFields,
+  mapServerErrorToField,
 } from '../../utils/registerUtils';
 
 export const SignUpPage = () => {
   const [loading, setLoading] = useState(false);
   const [activeStep, setActiveStep] = useState(0);
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
+  const [serverError, setServerError] = useState<string>('');
   const [formData, setFormData] = useState<any>({});
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
@@ -67,16 +69,21 @@ export const SignUpPage = () => {
     const newFormData = { ...formData, ...stepData };
     setFormData(newFormData);
     setFieldErrors({});
+    setServerError(''); // Limpiar errores del servidor
 
     const validationResult = validateRegistrationForm(stepData, activeStep, termsAccepted);
 
     if (!validationResult.isValid) {
-      setFieldErrors(mapErrorsToFields(validationResult.errors));
+      const fieldMap = mapErrorsToFields(validationResult.errors);
+      setFieldErrors(fieldMap);
       notify('Corrige los errores del formulario.', { type: 'warning' });
       return;
     }
 
-    setFieldValidation((prev: Record<string, boolean>) => ({ ...prev, ...validationResult.fieldValidation }));
+    setFieldValidation((prev: Record<string, boolean>) => ({ 
+      ...prev, 
+      ...validationResult.fieldValidation 
+    }));
 
     if (activeStep === 0) {
       setActiveStep(1);
@@ -88,33 +95,111 @@ export const SignUpPage = () => {
   const handleBack = () => {
     setActiveStep(0);
     setFieldErrors({});
+    setServerError(''); // Limpiar errores del servidor al retroceder
   };
 
   const handleSubmit = async (finalData: any) => {
     setLoading(true);
     setFieldErrors({});
+    setServerError('');
 
-    // Filtrar confirmPassword antes de enviar
-    const { confirmPassword, ...dataToSend } = finalData;
+    try {
+      // Validación final antes de enviar
+      const finalValidation = validateRegistrationForm(finalData, 1, termsAccepted);
+      if (!finalValidation.isValid) {
+        const fieldMap = mapErrorsToFields(finalValidation.errors);
+        setFieldErrors(fieldMap);
+        setLoading(false);
+        notify('Corrige los errores del formulario antes de enviar.', { type: 'warning' });
+        return;
+      }
 
-    const values = {
-      ...dataToSend, // Ya no incluye confirmPassword
-      rol: finalData.rol ? 'organizer' : 'user',
-    };
+      // Filtrar confirmPassword antes de enviar
+      const { confirmPassword, ...dataToSend } = finalData;
 
-    const response = await authProvider.signup(values);
-    if (response?.status === 201) {
-      setSignupSuccess(true);
-    } else {
-      notify(response?.message || 'Error al crear la cuenta', { type: 'error' });
+      const values = {
+        ...dataToSend,
+        rol: finalData.rol ? 'organizer' : 'user',
+      };
+
+      console.log('Enviando datos de registro:', values);
+
+      const response = await authProvider.signup(values);
+      
+      if (response?.status === 201) {
+        setSignupSuccess(true);
+        notify('¡Cuenta creada exitosamente!', { type: 'success' });
+      } else {
+        // Manejar diferentes tipos de errores del servidor
+        handleServerError(response);
+      }
+    } catch (error: any) {
+      console.error('Error completo en registro:', error);
+      handleServerError(error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleServerError = (error: any) => {
+    let errorMessage = 'Error al crear la cuenta. Intenta nuevamente.';
+
+    // Extraer mensaje de error del servidor
+    if (error?.message) {
+      errorMessage = error.message;
+    } else if (error?.response?.data?.message) {
+      errorMessage = error.response.data.message;
+    } else if (error?.data?.message) {
+      errorMessage = error.data.message;
     }
 
-    setLoading(false);
+    console.log('Error del servidor:', errorMessage);
+
+    // Usar la nueva función para mapear errores del servidor
+    const mappedError = mapServerErrorToField(errorMessage);
+
+    if (mappedError.field) {
+      // Error específico de un campo
+      const fieldErrors = { [mappedError.field]: mappedError.message };
+      setFieldErrors(fieldErrors);
+      
+      // Retroceder al paso correspondiente si es necesario
+      if (mappedError.field === 'email' || mappedError.field === 'password') {
+        setActiveStep(0);
+      } else if (mappedError.field === 'username' || mappedError.field === 'phone' || mappedError.field === 'name' || mappedError.field === 'lastname') {
+        setActiveStep(1);
+      }
+      
+      notify(mappedError.message, { type: 'error' });
+    } else {
+      // Error general del servidor
+      setServerError(mappedError.message);
+      notify(mappedError.message, { type: 'error' });
+    }
   };
 
   const handlePasswordChange = (password: string) => {
     setPasswordStrength(calculatePasswordStrength(password));
     setFormData((prev: any) => ({ ...prev, password }));
+    
+    // Limpiar errores de contraseña cuando el usuario esté escribiendo
+    if (fieldErrors.password) {
+      setFieldErrors(prev => ({ ...prev, password: '' }));
+    }
+  };
+
+  const handleFieldChange = (fieldName: string, value: string) => {
+    setFormData((prev: any) => ({ ...prev, [fieldName]: value }));
+    
+    // Limpiar errores del campo cuando el usuario esté escribiendo
+    if (fieldErrors[fieldName]) {
+      setFieldErrors(prev => ({ ...prev, [fieldName]: '' }));
+    }
+    
+    // Limpiar errores del servidor cuando el usuario modifique campos
+    if (serverError) {
+      setServerError('');
+    }
   };
 
   const PasswordStrengthIndicator = () => {
@@ -238,6 +323,7 @@ export const SignUpPage = () => {
                 helperText={fieldErrors.email}
                 error={!!fieldErrors.email}
                 defaultValue={formData.email}
+                onChange={(e) => handleFieldChange('email', e.target.value)}
                 slotProps={{
                   input: {
                     startAdornment: (
@@ -284,7 +370,10 @@ export const SignUpPage = () => {
                     },
                   }}
                   type={showPassword ? 'text' : 'password'}
-                  onChange={(e) => handlePasswordChange(e.target.value)}
+                  onChange={(e) => {
+                    handlePasswordChange(e.target.value);
+                    handleFieldChange('password', e.target.value);
+                  }}
                   sx={inputStyles}
                 />
                 <PasswordStrengthIndicator />
@@ -299,6 +388,7 @@ export const SignUpPage = () => {
                 helperText={fieldErrors.confirmPassword}
                 error={!!fieldErrors.confirmPassword}
                 defaultValue={formData.confirmPassword}
+                onChange={(e) => handleFieldChange('confirmPassword', e.target.value)}
                 slotProps={{
                   input: {
                     startAdornment: (
@@ -422,6 +512,7 @@ export const SignUpPage = () => {
                   helperText={fieldErrors.name}
                   error={!!fieldErrors.name}
                   defaultValue={formData.name}
+                  onChange={(e) => handleFieldChange('name', e.target.value)}
                   slotProps={{
                     input: {
                       endAdornment: <ValidationIcon fieldName="name" />,
@@ -438,6 +529,7 @@ export const SignUpPage = () => {
                   helperText={fieldErrors.lastname}
                   error={!!fieldErrors.lastname}
                   defaultValue={formData.lastname}
+                  onChange={(e) => handleFieldChange('lastname', e.target.value)}
                   slotProps={{
                     input: {
                       endAdornment: <ValidationIcon fieldName="lastname" />,
@@ -456,6 +548,7 @@ export const SignUpPage = () => {
                 helperText={fieldErrors.username}
                 error={!!fieldErrors.username}
                 defaultValue={formData.username}
+                onChange={(e) => handleFieldChange('username', e.target.value)}
                 slotProps={{
                   input: {
                     endAdornment: <ValidationIcon fieldName="username" />,
@@ -474,6 +567,7 @@ export const SignUpPage = () => {
                 error={!!fieldErrors.phone}
                 defaultValue={formData.phone}
                 placeholder="099 123 4564"
+                onChange={(e) => handleFieldChange('phone', e.target.value)}
                 slotProps={{
                   input: {
                     endAdornment: <ValidationIcon fieldName="phone" />,
@@ -656,6 +750,25 @@ export const SignUpPage = () => {
                     </Step>
                   ))}
                 </Stepper>
+
+                {/* Error del servidor */}
+                {serverError && (
+                  <Alert
+                    severity="error"
+                    sx={{
+                      mb: 3,
+                      backgroundColor: 'rgba(244, 67, 54, 0.1)',
+                      borderColor: '#F44336',
+                      color: '#F44336',
+                      '& .MuiAlert-icon': {
+                        color: '#F44336',
+                      },
+                    }}
+                    onClose={() => setServerError('')}
+                  >
+                    {serverError}
+                  </Alert>
+                )}
 
                 {/* Step Content */}
                 {renderStepContent(activeStep)}
