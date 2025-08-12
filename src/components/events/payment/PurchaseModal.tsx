@@ -98,54 +98,59 @@ const PurchaseModal: React.FC<PurchaseModalProps> = ({
   // Obtener solo las categorías con cantidad > 0
   const selectedTickets = ticketCategories.filter((category) => ticketQuantities[category.id] > 0);
 
+  // Helpers para validaciones avanzadas
+  const gmailRegex = /^[a-zA-Z0-9._%+-]+@gmail\.com$/i;
+  const nameRegex = /^[A-Za-zÁÉÍÓÚáéíóúÑñÜü\s'-]{2,50}$/;
+
+  const validateEcuadorianCedula = (value: string): boolean => {
+    const cedula = value.trim();
+    if (!/^\d{10}$/.test(cedula)) return false;
+    const province = parseInt(cedula.slice(0, 2), 10);
+    if (province < 1 || province > 24) return false;
+    const third = parseInt(cedula.charAt(2), 10);
+    if (third >= 6) return false;
+    const coefficients = [2,1,2,1,2,1,2,1,2];
+    let sum = 0;
+    for (let i = 0; i < 9; i++) {
+      let prod = parseInt(cedula.charAt(i), 10) * coefficients[i];
+      if (prod >= 10) prod -= 9;
+      sum += prod;
+    }
+    const nearestTen = Math.ceil(sum / 10) * 10;
+    const checkDigit = (nearestTen - sum) % 10;
+    return checkDigit === parseInt(cedula.charAt(9), 10);
+  };
+
   const validateForm = (): boolean => {
     const newErrors: Partial<PurchaseFormData> = {};
-    let isValid = true;
 
-    // Email validation
-    if (!formData.ownerEmail.trim()) {
-      newErrors.ownerEmail = 'El email es requerido';
-      isValid = false;
-    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.ownerEmail)) {
-      newErrors.ownerEmail = 'Email inválido';
-      isValid = false;
-    }
+    // Email solo Gmail
+    const email = formData.ownerEmail.trim();
+    if (!email) newErrors.ownerEmail = 'El email es requerido';
+    else if (!gmailRegex.test(email)) newErrors.ownerEmail = 'Solo se acepta correo @gmail.com';
 
-    // First name validation
-    if (!formData.ownerName.trim()) {
-      newErrors.ownerName = 'El nombre es requerido';
-      isValid = false;
-    } else if (formData.ownerName.trim().length < 2) {
-      newErrors.ownerName = 'El nombre debe tener al menos 2 caracteres';
-      isValid = false;
-    }
+    // Nombres y apellidos
+    const name = formData.ownerName.trim();
+    if (!name) newErrors.ownerName = 'El nombre es requerido';
+    else if (!nameRegex.test(name)) newErrors.ownerName = 'Solo letras (2-50)';
 
-    // Last name validation
-    if (!formData.ownerLastname.trim()) {
-      newErrors.ownerLastname = 'El apellido es requerido';
-      isValid = false;
-    } else if (formData.ownerLastname.trim().length < 2) {
-      newErrors.ownerLastname = 'El apellido debe tener al menos 2 caracteres';
-      isValid = false;
-    }
+    const lastname = formData.ownerLastname.trim();
+    if (!lastname) newErrors.ownerLastname = 'El apellido es requerido';
+    else if (!nameRegex.test(lastname)) newErrors.ownerLastname = 'Solo letras (2-50)';
 
-    // Cedula validation
-    if (!formData.ownerCi.trim()) {
-      newErrors.ownerCi = 'La cédula es requerida';
-      isValid = false;
-    } else if (!/^\d{8,12}$/.test(formData.ownerCi.trim())) {
-      newErrors.ownerCi = 'La cédula debe tener entre 8 y 12 dígitos';
-      isValid = false;
-    }
+    // Cédula ecuatoriana
+    const ci = formData.ownerCi.trim();
+    if (!ci) newErrors.ownerCi = 'La cédula es requerida';
+    else if (!/^\d{10}$/.test(ci)) newErrors.ownerCi = 'Debe tener 10 dígitos';
+    else if (!validateEcuadorianCedula(ci)) newErrors.ownerCi = 'Cédula ecuatoriana no válida';
 
-    // Voucher validation (ahora obligatorio)
     if (!formData.voucher) {
       setError('El comprobante de pago es obligatorio');
-      isValid = false;
     }
 
+    const hasErrors = Object.keys(newErrors).length > 0 || !formData.voucher;
     setFormErrors(newErrors);
-    return isValid;
+    return !hasErrors;
   };
 
   const handleInputChange = (field: keyof PurchaseFormData, value: string) => {
@@ -189,6 +194,25 @@ const PurchaseModal: React.FC<PurchaseModalProps> = ({
       return;
     }
 
+    // Obtener ownerId desde localStorage (usuario autenticado)
+    let ownerId: number | null = null;
+    try {
+      const rawAuth = localStorage.getItem('auth');
+      if (rawAuth) {
+        const parsed = JSON.parse(rawAuth);
+        if (parsed && typeof parsed.id === 'number') {
+          ownerId = parsed.id;
+        }
+      }
+    } catch (e) {
+      // Ignorar error de parseo, se manejará como ausencia de sesión
+    }
+
+    if (ownerId === null) {
+      setError('No se encontró la sesión del usuario. Inicie sesión nuevamente.');
+      return;
+    }
+
     setLoading(true);
     setError('');
 
@@ -202,6 +226,7 @@ const PurchaseModal: React.FC<PurchaseModalProps> = ({
       // Datos de la compra
       const purchaseData = {
         eventId: parseInt(eventId),
+        ownerId, // Nuevo: ID del usuario autenticado
         ownerEmail: formData.ownerEmail.trim(),
         ownerName: formData.ownerName.trim(),
         ownerLastname: formData.ownerLastname.trim(),
@@ -405,7 +430,7 @@ const PurchaseModal: React.FC<PurchaseModalProps> = ({
                         onChange={(e) => handleInputChange('ownerEmail', e.target.value)}
                         variant="outlined"
                         error={!!formErrors.ownerEmail}
-                        helperText={formErrors.ownerEmail}
+                        helperText={formErrors.ownerEmail || 'Dominios permitidos: gmail, hotmail, outlook'}
                         required
                       />
                     </Grid2>
@@ -418,7 +443,7 @@ const PurchaseModal: React.FC<PurchaseModalProps> = ({
                         onChange={(e) => handleInputChange('ownerName', e.target.value)}
                         variant="outlined"
                         error={!!formErrors.ownerName}
-                        helperText={formErrors.ownerName}
+                        helperText={formErrors.ownerName || 'Solo letras y espacios (2-50)'}
                         required
                       />
                     </Grid2>
@@ -431,7 +456,7 @@ const PurchaseModal: React.FC<PurchaseModalProps> = ({
                         onChange={(e) => handleInputChange('ownerLastname', e.target.value)}
                         variant="outlined"
                         error={!!formErrors.ownerLastname}
-                        helperText={formErrors.ownerLastname}
+                        helperText={formErrors.ownerLastname || 'Solo letras y espacios (2-50)'}
                         required
                       />
                     </Grid2>
@@ -441,12 +466,12 @@ const PurchaseModal: React.FC<PurchaseModalProps> = ({
                         fullWidth
                         label="Cédula"
                         value={formData.ownerCi}
-                        onChange={(e) => handleInputChange('ownerCi', e.target.value)}
+                        onChange={(e) => handleInputChange('ownerCi', e.target.value.replace(/[^0-9]/g, ''))}
                         variant="outlined"
                         error={!!formErrors.ownerCi}
-                        helperText={formErrors.ownerCi}
+                        helperText={formErrors.ownerCi || '10 dígitos válidos'}
                         required
-                        inputProps={{ maxLength: 12 }}
+                        inputProps={{ maxLength: 10 }}
                       />
                     </Grid2>
 

@@ -43,10 +43,10 @@ export const validateEmail = (value: any) => {
   if (!value || (typeof value === 'string' && value.trim() === '')) {
     return 'El correo electrónico es requerido';
   }
-  // Solo permitir correos de Gmail
-  const emailRegex = /^[a-zA-Z0-9._%+-]+@gmail\.com$/i;
+  // Solo permitir dominios comunes especificados
+  const emailRegex = /^[a-zA-Z0-9._%+-]+@(gmail|hotmail|outlook)\.com$/i;
   return !emailRegex.test(value)
-    ? 'Solo se permite un correo Gmail (@gmail.com)'
+    ? 'Solo se permiten correos @gmail.com, @hotmail.com o @outlook.com'
     : undefined;
 };
 
@@ -57,9 +57,9 @@ export const validateRegistrationForm = (values: any, step: number, termsAccepte
 
   if (step === 0) {
     // Email
-    const emailRegex = /^[a-zA-Z0-9._%+-]+@gmail\.com$/i;
+    const emailRegex = /^[a-zA-Z0-9._%+-]+@(gmail|hotmail|outlook)\.com$/i;
     if (!values.email || !emailRegex.test(values.email)) {
-      errors.push('Solo se permite un correo Gmail (@gmail.com)');
+      errors.push('Solo se permiten correos @gmail.com, @hotmail.com o @outlook.com');
     } else {
       validation.email = true;
     }
