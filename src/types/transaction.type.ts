@@ -19,6 +19,19 @@ export interface ITicket {
   ticketCategory: ITicketCategory | null;
 }
 
+export interface IEventCategory {
+  id: number;
+  name: string;
+  description?: string;
+}
+
+export interface ICategoryManage {
+  id: number;
+  idEventCategory: number;
+  idEventEntity: number;
+  eventCategory: IEventCategory;
+}
+
 export interface IUserTransaction {
   id: number; // transactionId
   transactionId: number;
@@ -35,6 +48,7 @@ export interface IUserTransaction {
     capacity: number;
     state: string;
     userId: number;
+    categoryManages?: ICategoryManage[];
   };
   transactionState: string;
   purchaseDate: string;

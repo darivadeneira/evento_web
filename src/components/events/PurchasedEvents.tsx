@@ -103,12 +103,13 @@ const PurchasedEvents: React.FC = () => {
       ) : (
         <Grid2 container spacing={3}>
           {transactions.map((transaction) => {
-            // Crear un objeto mock del evento para obtener la imagen de categoría
-            // usando la primera categoría de ticket disponible
+        
             let backgroundImage = '';
-            
-            if (transaction.tickets && transaction.tickets.length > 0) {
-              // Buscar el primer ticket que tenga información de categoría
+            if (transaction.eventInfo?.categoryManages && transaction.eventInfo.categoryManages.length > 0) {
+              backgroundImage = getEventCategoryImage(transaction.eventInfo);
+            } 
+        
+            else if (transaction.tickets && transaction.tickets.length > 0) {
               const ticketWithCategory = transaction.tickets.find(ticket => ticket.ticketCategory);
               
               if (ticketWithCategory && ticketWithCategory.ticketCategory) {
@@ -121,11 +122,9 @@ const PurchasedEvents: React.FC = () => {
                 };
                 backgroundImage = getEventCategoryImage(eventForImage);
               } else {
-                // Usar imagen por defecto si no hay categoría
                 backgroundImage = getEventCategoryImage({});
               }
             } else {
-              // Usar imagen por defecto si no hay tickets
               backgroundImage = getEventCategoryImage({});
             }
 
