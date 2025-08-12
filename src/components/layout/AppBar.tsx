@@ -135,23 +135,6 @@ const AppBarComponent = (props: any) => {
                 },
               }}
             >
-              <Badge badgeContent={3} color="primary">
-                <NotificationsIcon />
-              </Badge>
-            </IconButton>
-          </Tooltip>
-
-          <Tooltip title="Configuración">
-            <IconButton
-              size="small"
-              sx={{
-                color: theme.palette.primary.main,
-                "&:hover": {
-                  backgroundColor: "rgba(74, 255, 117, 0.08)",
-                },
-              }}
-            >
-              <SettingsIcon />
             </IconButton>
           </Tooltip>
         </Box>

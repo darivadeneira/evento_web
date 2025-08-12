@@ -20,6 +20,7 @@ import HelpOutlineIcon from "@mui/icons-material/HelpOutline";
 import ExitToAppIcon from "@mui/icons-material/ExitToApp";
 import PaletteIcon from "@mui/icons-material/Palette";
 import EventAvailableIcon from '@mui/icons-material/EventAvailable';
+import ConfirmationNumberIcon from '@mui/icons-material/ConfirmationNumber';
 
 interface CustomUserMenuProps {
   open: boolean;
@@ -41,29 +42,14 @@ const CustomUserMenu = ({ open, onClose, name, lastname }: CustomUserMenuProps) 
 
   const menuItems = [
     {
-      text: "Mi Perfil",
-      icon: <AccountCircleIcon />,
+      text: "Eventos Comprados",
+      icon: <ConfirmationNumberIcon />,
       action: () => {
-        console.log("Ver perfil");
+        navigate('/mis-eventos-comprados');
         onClose();
       },
     },
-    {
-      text: "Configuración",
-      icon: <SettingsIcon />,
-      action: () => {
-        console.log("Configuración");
-        onClose();
-      },
-    },
-    // {
-    //   text: "Notificaciones",
-    //   icon: <NotificationsIcon />,
-    //   action: () => {
-    //     console.log("Notificaciones");
-    //     onClose();
-    //   },
-    // },    
+   
     ...(isOrganizer ? [{
       text: "Mis Eventos",
       icon: <EventAvailableIcon />,

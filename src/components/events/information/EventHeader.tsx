@@ -1,20 +1,31 @@
 import { Box, Typography, Chip } from '@mui/material';
 import { useTheme } from '@mui/material/styles';
+import { getEventCategoryImage } from '../../../utils/categoryImages';
 
 interface EventHeaderProps {
   name: string;
   status: { label: string; color: string };
+  event?: any; // Agregamos el evento completo para obtener las categorías
 }
 
-const EventHeader = ({ name, status }: EventHeaderProps) => {
+const EventHeader = ({ name, status, event }: EventHeaderProps) => {
   const theme = useTheme();
+  
+  // Obtener la imagen de fondo según la categoría del evento
+  const backgroundImage = event ? getEventCategoryImage(event) : null;
+  
   return (    <Box
       sx={{
         position: 'relative',
         borderRadius: 3,
-        overflow: 'visible', // Cambiar a visible para evitar que se corte
+        overflow: 'hidden', // Cambiar a hidden para que funcione el background
         mb: 0,
-        background: theme.palette.background.paper,
+        background: backgroundImage 
+          ? `linear-gradient(rgba(0,0,0,0.7), rgba(0,0,0,0.5)), url(${backgroundImage})`
+          : theme.palette.background.paper,
+        backgroundSize: 'cover',
+        backgroundPosition: 'center',
+        backgroundRepeat: 'no-repeat',
         boxShadow: '0 10px 30px rgba(0,0,0,0.15)',
         py: { xs: 3, md: 5 }, // Reducir padding vertical en móvil
         px: { xs: 2, md: 4 }, // Reducir padding horizontal en móvil
@@ -29,7 +40,9 @@ const EventHeader = ({ name, status }: EventHeaderProps) => {
           left: -1,
           right: -1,
           bottom: -1,
-          background: `linear-gradient(45deg, ${theme.custom.greenGradient.start}, ${theme.custom.greenGradient.end})`,
+          background: backgroundImage 
+            ? 'transparent' 
+            : `linear-gradient(45deg, ${theme.custom.greenGradient.start}, ${theme.custom.greenGradient.end})`,
           borderRadius: 'inherit',
           zIndex: -1,
           filter: 'blur(2px)',
@@ -50,13 +63,13 @@ const EventHeader = ({ name, status }: EventHeaderProps) => {
       >
         <Typography
           variant="h2"
-          color="text.primary"
           sx={{
             fontWeight: 800,
             fontSize: { xs: '1.75rem', sm: '2.25rem', md: '3.2rem' }, // Mejor escalado responsive
-            textShadow: '0 2px 10px rgba(0,0,0,0.3)',
+            textShadow: '0 2px 10px rgba(0,0,0,0.8)',
             lineHeight: 1.2,
             mb: { xs: 0.5, md: 0 }, // Pequeño margen bottom en móvil
+            color: backgroundImage ? 'white' : 'text.primary', // Texto blanco sobre imagen
           }}
         >
           {name}

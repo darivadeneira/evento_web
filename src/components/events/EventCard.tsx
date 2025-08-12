@@ -7,6 +7,7 @@ import { DateField } from 'react-admin';
 import React from 'react';
 import type { IEvent } from '../../types/event.type';
 import { useNavigate } from 'react-router-dom';
+import { getEventCategoryImage } from '../../utils/categoryImages';
 
 interface EventCardProps {
   event: IEvent;
@@ -16,6 +17,10 @@ interface EventCardProps {
 
 const EventCard: React.FC<EventCardProps> = ({ event, admin = false, onEditEvent }) => {
   const navigate = useNavigate();    
+  
+  // Obtener la imagen de fondo según la categoría del evento
+  const backgroundImage = getEventCategoryImage(event);
+  
   const getEventStatus = (event: IEvent) => {
     // Considerar evento en progreso si la fecha es hoy y la hora ya pasó pero no ha terminado (simple: 4h de duración)
     if (event.state === 'active') {
@@ -59,7 +64,10 @@ const EventCard: React.FC<EventCardProps> = ({ event, admin = false, onEditEvent
           sx={{
             height: 200,
             position: 'relative',
-            backgroundColor: (theme) => theme.palette.primary.main,
+            background: `linear-gradient(rgba(0,0,0,0.6), rgba(0,0,0,0.4)), url(${backgroundImage})`,
+            backgroundSize: 'cover',
+            backgroundPosition: 'center',
+            backgroundRepeat: 'no-repeat',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
@@ -69,7 +77,12 @@ const EventCard: React.FC<EventCardProps> = ({ event, admin = false, onEditEvent
         >
           <Typography
             variant="h5"
-            sx={{ textAlign: 'center', p: 2 }}
+            sx={{ 
+              textAlign: 'center', 
+              p: 2,
+              textShadow: '0 2px 8px rgba(0,0,0,0.8)',
+              fontWeight: 600
+            }}
           >
             {event.name}
           </Typography>

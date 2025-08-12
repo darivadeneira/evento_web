@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Dialog,
   DialogTitle,
@@ -21,6 +21,10 @@ import {
   Select,
   CircularProgress,
   IconButton,
+  Chip,
+  Checkbox,
+  ListItemText,
+  OutlinedInput,
 } from '@mui/material';
 import { useTheme } from '@mui/material/styles';
 import { useGetIdentity } from 'react-admin';
@@ -30,8 +34,15 @@ import AddCircleOutlineIcon from '@mui/icons-material/AddCircleOutline';
 import DeleteIcon from '@mui/icons-material/Delete';
 import { eventEntityProvider } from '../../providers/eventEntity.provider';
 import { ticketCategoryProvider } from '../../providers/ticketCategory.provider';
+import { apiAuth } from '../../api/api';
 import LocationPicker from './LocationPicker';
 import type { ITicketCategory } from '../../types/ticketCategory.type';
+
+interface IEventCategory {
+  id: number;
+  name: string;
+  description: string;
+}
 
 interface CreateEventModalProps {
   open: boolean;
@@ -49,6 +60,7 @@ interface EventFormData {
   description: string;
   capacity: number;
   state: 'active' | 'inactive' | 'cancelled';
+  categories: number[];
 }
 
 interface TicketCategoryFormState {
@@ -102,6 +114,7 @@ const initialFormData: EventFormData = {
   description: '',
   capacity: 0,
   state: 'active',
+  categories: [],
 };
 
 const CreateEventModal: React.FC<CreateEventModalProps> = ({ open, onClose, onEventCreated }) => {
@@ -111,12 +124,34 @@ const CreateEventModal: React.FC<CreateEventModalProps> = ({ open, onClose, onEv
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [formData, setFormData] = useState<EventFormData>(initialFormData);
+  const [eventCategories, setEventCategories] = useState<IEventCategory[]>([]);
+  const [categoriesLoading, setCategoriesLoading] = useState(false);
 
   const [createdEventId, setCreatedEventId] = useState<number | null>(null);
   const [ticketCategories, setTicketCategories] = useState<TicketCategoryFormState[]>([]);
   const [categoryErrors, setCategoryErrors] = useState<
     Record<number, Partial<Record<keyof Omit<TicketCategoryFormState, 'id'>, string>>>
   >({});
+
+  // Cargar categorías de eventos al abrir el modal
+  useEffect(() => {
+    if (open) {
+      loadEventCategories();
+    }
+  }, [open]);
+
+  const loadEventCategories = async () => {
+    setCategoriesLoading(true);
+    try {
+      const response = await apiAuth.get('/event-category');
+      setEventCategories(response.data || []);
+    } catch (error) {
+      console.error('Error loading event categories:', error);
+      setError('Error al cargar las categorías de eventos');
+    } finally {
+      setCategoriesLoading(false);
+    }
+  };
 
   const handleNext = () => {
     if (validateStep(activeStep)) {
@@ -137,6 +172,7 @@ const CreateEventModal: React.FC<CreateEventModalProps> = ({ open, onClose, onEv
     setCreatedEventId(null);
     setTicketCategories([]);
     setCategoryErrors({});
+    setEventCategories([]);
   };
 
   const handleLocationSelect = (coordinates: [number, number]) => {
@@ -180,6 +216,7 @@ const CreateEventModal: React.FC<CreateEventModalProps> = ({ open, onClose, onEv
         if (formData.capacity <= 0) return 'La capacidad debe ser mayor a 0';
         if (formData.capacity > 100000) return 'La capacidad máxima es de 100,000.';
         if (formData.description.length > 500) return 'La descripción no puede exceder los 500 caracteres.';
+        if (formData.categories.length === 0) return 'Debe seleccionar al menos una categoría para el evento';
         return null;
       },
       // Step 2: Location
@@ -216,8 +253,11 @@ const CreateEventModal: React.FC<CreateEventModalProps> = ({ open, onClose, onEv
         userId: identity.id,
       };
 
+      // Crear el evento (ahora las categorías se envían directamente)
       const response = await eventEntityProvider.create('event-entity', { data: eventData });
-      setCreatedEventId(response.data.id);
+      const eventId = response.data.id;
+      setCreatedEventId(eventId);
+
       setActiveStep((prev) => prev + 1);
     } catch (error: any) {
       console.error('Error creating event:', error);
@@ -513,6 +553,54 @@ const CreateEventModal: React.FC<CreateEventModalProps> = ({ open, onClose, onEv
             </Select>
           </FormControl>
         </Grid2>
+        <Grid2 size={12}>
+          <FormControl
+            fullWidth
+            variant="outlined"
+          >
+            <InputLabel>Categorías del Evento</InputLabel>
+            <Select
+              multiple
+              value={formData.categories}
+              onChange={(e) => {
+                const value = typeof e.target.value === 'string' ? e.target.value.split(',') : e.target.value;
+                handleInputChange('categories', value.map(Number));
+              }}
+              input={<OutlinedInput label="Categorías del Evento" />}
+              renderValue={(selected) => (
+                <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
+                  {selected.map((value) => {
+                    const category = eventCategories.find(cat => cat.id === value);
+                    return (
+                      <Chip key={value} label={category?.name || value} />
+                    );
+                  })}
+                </Box>
+              )}
+            >
+              {categoriesLoading ? (
+                <MenuItem disabled>
+                  <CircularProgress size={20} sx={{ mr: 1 }} />
+                  Cargando categorías...
+                </MenuItem>
+              ) : eventCategories.length === 0 ? (
+                <MenuItem disabled>
+                  No hay categorías disponibles
+                </MenuItem>
+              ) : (
+                eventCategories.map((category) => (
+                  <MenuItem key={category.id} value={category.id}>
+                    <Checkbox checked={formData.categories.includes(category.id)} />
+                    <ListItemText 
+                      primary={category.name} 
+                      secondary={category.description}
+                    />
+                  </MenuItem>
+                ))
+              )}
+            </Select>
+          </FormControl>
+        </Grid2>
       </Grid2>,
       // Step 2: Location
       !formData.city.trim() ? (
@@ -582,6 +670,25 @@ const CreateEventModal: React.FC<CreateEventModalProps> = ({ open, onClose, onEv
               <Typography>
                 <strong>Capacidad:</strong> {formData.capacity.toLocaleString()} personas
               </Typography>
+            </Grid2>
+            <Grid2 size={12}>
+              <Typography>
+                <strong>Categorías:</strong>
+              </Typography>
+              <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5, mt: 1 }}>
+                {formData.categories.map((categoryId) => {
+                  const category = eventCategories.find(cat => cat.id === categoryId);
+                  return (
+                    <Chip 
+                      key={categoryId} 
+                      label={category?.name || `ID: ${categoryId}`} 
+                      size="small"
+                      color="primary"
+                      variant="outlined"
+                    />
+                  );
+                })}
+              </Box>
             </Grid2>
           </Grid2>
         </Card>

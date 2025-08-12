@@ -7,6 +7,7 @@ import ShoppingCartIcon from '@mui/icons-material/ShoppingCart';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import { useTheme } from '@mui/material/styles';
 import { useEffect, useState } from 'react';
+import { useRefresh } from 'react-admin';
 import PurchaseModal from '../payment/PurchaseModal';
 import socket from '../../../websocket/socket';
 
@@ -44,6 +45,7 @@ interface TicketCategoriesPanelProps {
 
 const TicketCategoriesPanel = ({ ticketCategories, ticketQuantities, incrementTicket, decrementTicket, resetTicketQuantities, totalAmount, eventId, eventName }: TicketCategoriesPanelProps) => {
   const theme = useTheme();
+  const refresh = useRefresh();
   const [purchaseModalOpen, setPurchaseModalOpen] = useState(false);
   const [successSnackbarOpen, setSuccessSnackbarOpen] = useState(false);
   // Estado para los tickets disponibles por categoría
@@ -159,8 +161,24 @@ const TicketCategoriesPanel = ({ ticketCategories, ticketQuantities, incrementTi
 
 
   const handlePurchaseComplete = () => {
+    // Resetear las cantidades seleccionadas
+    resetTicketQuantities();
+    
+    // Cerrar el modal de compra
+    setPurchaseModalOpen(false);
+    
+    // Mostrar notificación de éxito
     setSuccessSnackbarOpen(true);
-    console.log('Compra completada exitosamente');
+    
+    // Aplicar refresh de React Admin para recargar todos los datos
+    refresh();
+    
+    console.log('Compra completada exitosamente - refresh aplicado');
+    
+    // Nota: No necesitamos actualizar availableTicketsState aquí porque:
+    // 1. Ya lo actualizamos cuando abrimos el modal (handlePurchaseClick)
+    // 2. El websocket se encarga de mantener sincronizados otros clientes
+    // 3. El refresh() recargará todos los datos de la página
   };
 
   const handleSuccessSnackbarClose = () => {

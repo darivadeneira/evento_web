@@ -141,7 +141,7 @@ const EventDetails = (props: any) => {
       }}
     >
 
-        <EventHeader name={name} status={status} />
+        <EventHeader name={name} status={status} event={record} />
         <Box
           sx={{
             mt: 3,

@@ -11,6 +11,7 @@ import { EventList } from './components/events/EventList';
 import { darkNeonTheme } from './theme/darkNeonTheme';
 import OrganizerEvents from './components/events/OrganizerEvents';
 import EventDetails from './components/events/information/EventDetails';
+import PurchasedEvents from './components/events/PurchasedEvents';
 
 function App() {
   return (
@@ -41,6 +42,10 @@ function App() {
                 <Route
                   path="/organizer-events"
                   element={<OrganizerEvents />}
+                />
+                <Route
+                  path="/mis-eventos-comprados"
+                  element={<PurchasedEvents />}
                 />
                 <Route
                   path="/evento/:id"
