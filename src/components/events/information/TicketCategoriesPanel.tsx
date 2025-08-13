@@ -107,54 +107,9 @@ const TicketCategoriesPanel = ({ ticketCategories, ticketQuantities, incrementTi
 
   const handlePurchaseClick = () => {
     setPurchaseModalOpen(true);
-
-    let notifyStockChange: IStockChange = {
-      eventId: parseInt(eventId),
-      stockChange: []
-    };
-
-    ticketCategories.forEach((category: TicketCategory) => {
-      const available = availableTicketsState[category.id];
-      const ticketSelected = ticketQuantities[category.id] || 0;
-      if (ticketSelected > 0) {
-        notifyStockChange.stockChange.push({
-          ticketCategoryId: category.id,
-          available: available - ticketSelected,
-        });
-      }
-    });
-
-    console.log("Stock change to notify:", notifyStockChange);
-    socket.emit('notifyStockChange', notifyStockChange);
   };
 
   const handleCancelPurchase = () => {
-    let notifyStockChange: IStockChange = {
-      eventId: parseInt(eventId),
-      stockChange: []
-    };
-
-    setAvailableTicketsState((prev) => {
-      const updated: Record<string, number> = { ...prev };
-
-      ticketCategories.forEach((category) => {
-        const selected = ticketQuantities[category.id] || 0;
-        const newAvailable = (updated[category.id] ?? category.availableTickets) + selected;
-
-        updated[category.id] = newAvailable;
-
-        if (selected > 0) {
-          notifyStockChange.stockChange.push({
-            ticketCategoryId: category.id,
-            available: newAvailable,
-          });
-        }
-      });
-
-      return updated;
-    });
-
-    socket.emit('notifyStockChange', notifyStockChange);
     resetTicketQuantities();
     setPurchaseModalOpen(false);
   };
@@ -162,23 +117,33 @@ const TicketCategoriesPanel = ({ ticketCategories, ticketQuantities, incrementTi
 
   const handlePurchaseComplete = () => {
     // Resetear las cantidades seleccionadas
+    // Primero recalculamos nuevo stock local y emitimos una sola vez
+    let notifyStockChange: IStockChange = { eventId: parseInt(eventId), stockChange: [] };
+
+    setAvailableTicketsState((prev) => {
+      const updated = { ...prev };
+      ticketCategories.forEach((category) => {
+        const selected = ticketQuantities[category.id] || 0;
+        if (selected > 0) {
+          const base = updated[category.id] ?? category.availableTickets;
+            // Ahora sí descontamos definitivamente
+          const newAvailable = Math.max(base - selected, 0);
+          updated[category.id] = newAvailable;
+          notifyStockChange.stockChange.push({ ticketCategoryId: category.id, available: newAvailable });
+        }
+      });
+      return updated;
+    });
+
+    if (notifyStockChange.stockChange.length > 0) {
+      socket.emit('notifyStockChange', notifyStockChange);
+    }
+
     resetTicketQuantities();
-    
-    // Cerrar el modal de compra
     setPurchaseModalOpen(false);
-    
-    // Mostrar notificación de éxito
     setSuccessSnackbarOpen(true);
-    
-    // Aplicar refresh de React Admin para recargar todos los datos
     refresh();
-    
-    console.log('Compra completada exitosamente - refresh aplicado');
-    
-    // Nota: No necesitamos actualizar availableTicketsState aquí porque:
-    // 1. Ya lo actualizamos cuando abrimos el modal (handlePurchaseClick)
-    // 2. El websocket se encarga de mantener sincronizados otros clientes
-    // 3. El refresh() recargará todos los datos de la página
+    console.log('Compra completada exitosamente - stock confirmado y emitido');
   };
 
   const handleSuccessSnackbarClose = () => {
@@ -223,8 +188,19 @@ const TicketCategoriesPanel = ({ ticketCategories, ticketQuantities, incrementTi
               <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1 }}>
                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
                   <EventSeatIcon fontSize="small" color="primary" />
+                  {/**
+                   * IMPORTANTE:
+                   * Antes de abrir el modal mostramos: stock actual - seleccion local (para feedback inmediato)
+                   * Después de abrir el modal (ya enviamos notifyStockChange y el servidor nos devuelve el nuevo stock absoluto)
+                   * evitamos volver a restar lo seleccionado porque causaba doble resta y números negativos (ej: -10).
+                   */}
                   <Typography variant="body2">
-                    {(availableTicketsState[category.id] ?? category.availableTickets) - (ticketQuantities[category.id] || 0)} disponibles
+                    {(() => {
+                      const base = (availableTicketsState[category.id] ?? category.availableTickets);
+                      const selected = ticketQuantities[category.id] || 0;
+                      const display = purchaseModalOpen ? base : base - selected;
+                      return display < 0 ? 0 : display; // clamp para seguridad adicional
+                    })()} disponibles
                   </Typography>
                 </Box>
                 {category.start_date && category.end_date && (
@@ -234,15 +210,12 @@ const TicketCategoriesPanel = ({ ticketCategories, ticketQuantities, incrementTi
                 )}
               </Box>
               <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mt: 1, justifyContent: 'flex-end' }}>
-                <IconButton onClick={() => handleDecrementTicket(category.id)} color="primary" size="small" sx={{ bgcolor: 'action.hover' }} disabled={(ticketQuantities[category.id] || 0) === 0}>
+                <IconButton onClick={() => handleDecrementTicket(category.id)} color="primary" size="small" sx={{ bgcolor: 'action.hover' }} disabled={purchaseModalOpen || (ticketQuantities[category.id] || 0) === 0}>
                   <RemoveIcon />
                 </IconButton>
                 <Typography variant="h6" sx={{ minWidth: 30, textAlign: 'center' }}>{ticketQuantities[category.id] || 0}</Typography>
                 <IconButton onClick={() => handleIncrementTicket(category.id, category.availableTickets)} color="primary" size="small" sx={{ bgcolor: 'action.hover' }}
-                  disabled={
-                    ((availableTicketsState[category.id] ?? category.availableTickets) - (ticketQuantities[category.id] || 0)) <= 0
-                  }
-                >
+                  disabled={purchaseModalOpen || (((availableTicketsState[category.id] ?? category.availableTickets) - (ticketQuantities[category.id] || 0)) <= 0)}>
                   <AddIcon />
                 </IconButton>
               </Box>
