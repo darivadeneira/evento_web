@@ -5,9 +5,6 @@ import {
   CardContent,
   Typography,
   Avatar,
-  Tab,
-  Tabs,
-  Grid,
   Button,
   Chip,
   Container,
@@ -16,23 +13,23 @@ import {
   Stack,
   LinearProgress,
   IconButton,
-  Badge,
   Snackbar,
   Alert,
 } from '@mui/material';
 import { useTheme } from '@mui/material/styles';
 import { useGetIdentity } from 'react-admin';
 import PersonIcon from '@mui/icons-material/Person';
-import DashboardIcon from '@mui/icons-material/Dashboard';
 import EventIcon from '@mui/icons-material/Event';
 import AddIcon from '@mui/icons-material/Add';
 import EmailIcon from '@mui/icons-material/Email';
 import PhoneIcon from '@mui/icons-material/Phone';
 import EventAvailableIcon from '@mui/icons-material/EventAvailable';
-import TrendingUpIcon from '@mui/icons-material/TrendingUp';
-import PeopleIcon from '@mui/icons-material/People';
-import AttachMoneyIcon from '@mui/icons-material/AttachMoney';
+// Icons no usados eliminados
 import VisibilityIcon from '@mui/icons-material/Visibility';
+import { usePermissions } from 'react-admin';
+import { useNavigate } from 'react-router-dom';
+// Eliminado acordeón y tabla de transacciones, se usará modal de métricas
+import EventMetricsModal from './EventMetricsModal';
 import EditIcon from '@mui/icons-material/Edit';
 import { apiAuth } from '../../api/api';
 import EventCard from './EventCard';
@@ -40,39 +37,13 @@ import CreateEventModal from './CreateEventModal';
 import EditEventModal from './EditEventModal';
 import type { IEvent } from '../../types/event.type';
 
-interface TabPanelProps {
-  children?: React.ReactNode;
-  index: number;
-  value: number;
-}
-
-function TabPanel(props: TabPanelProps) {
-  const { children, value, index, ...other } = props;
-
-  return (
-    <div
-      role="tabpanel"
-      hidden={value !== index}
-      id={`organizer-tabpanel-${index}`}
-      aria-labelledby={`organizer-tab-${index}`}
-      {...other}
-    >
-      {value === index && <Box sx={{ p: { xs: 2, sm: 3, md: 2, lg: 3 } }}>{children}</Box>}
-    </div>
-  );
-}
-
-function a11yProps(index: number) {
-  return {
-    id: `organizer-tab-${index}`,
-    'aria-controls': `organizer-tabpanel-${index}`,
-  };
-}
+// Se eliminan Tabs y TabPanel porque el dashboard ahora es por-evento
 
 const OrganizerEvents: React.FC = () => {
   const theme = useTheme();
   const { data: identity, isLoading } = useGetIdentity();
-  const [tabValue, setTabValue] = useState(0);
+  const { permissions, isLoading: permsLoading } = usePermissions();
+  const navigate = useNavigate();
   const [events, setEvents] = useState<IEvent[]>([]);
   const [loading, setLoading] = useState(false);
   const [createModalOpen, setCreateModalOpen] = useState(false);
@@ -80,14 +51,13 @@ const OrganizerEvents: React.FC = () => {
   const [selectedEventId, setSelectedEventId] = useState<number | null>(null);
   const [eventCreatedSnackbar, setEventCreatedSnackbar] = useState(false);
   const [eventUpdatedSnackbar, setEventUpdatedSnackbar] = useState(false);
+  const [metricsOpen, setMetricsOpen] = useState(false);
+  const [metricsEventId, setMetricsEventId] = useState<number | null>(null);
+  const [metricsEventName, setMetricsEventName] = useState<string | undefined>(undefined);
 
   const initials = identity
     ? `${identity?.name?.charAt(0).toUpperCase()}${identity?.lastname?.charAt(0).toUpperCase()}`
     : 'UN';
-
-  const handleTabChange = (_: React.SyntheticEvent, newValue: number) => {
-    setTabValue(newValue);
-  };
 
   const fetchOrganizerEvents = async () => {
     if (!identity?.id) return;
@@ -113,10 +83,17 @@ const OrganizerEvents: React.FC = () => {
   };
 
   useEffect(() => {
-    if (tabValue === 1 && identity?.id) {
+    if (identity?.id) {
       fetchOrganizerEvents();
     }
-  }, [tabValue, identity?.id]);
+  }, [identity?.id]);
+
+  // Gate de acceso: solo organizadores
+  useEffect(() => {
+    if (!permsLoading && permissions && permissions !== 'organizer') {
+      navigate('/');
+    }
+  }, [permissions, permsLoading, navigate]);
 
   const handleCreateEvent = () => {
     setCreateModalOpen(true);
@@ -125,12 +102,6 @@ const OrganizerEvents: React.FC = () => {
   const handleEventCreated = () => {
     // Mostrar notificación
     setEventCreatedSnackbar(true);
-
-    // Cambiar a la pestaña de eventos si no está ya ahí
-    if (tabValue !== 1) {
-      setTabValue(1);
-    }
-
     // Recargar la lista de eventos después de crear uno nuevo
     setTimeout(() => {
       fetchOrganizerEvents();
@@ -149,7 +120,7 @@ const OrganizerEvents: React.FC = () => {
   const handleEventUpdated = () => {
     // Mostrar notificación
     setEventUpdatedSnackbar(true);
-    
+
     // Recargar la lista de eventos después de actualizar
     setTimeout(() => {
       fetchOrganizerEvents();
@@ -160,14 +131,19 @@ const OrganizerEvents: React.FC = () => {
     setEventUpdatedSnackbar(false);
   };
 
-  // Métricas simuladas - en el futuro vienen de la API
-  const metrics = {
-    totalEvents: events.length,
-    activeEvents: events.filter((e) => e.state === 'active').length,
-    totalTicketsSold: 189,
-    totalRevenue: 4850,
-    averageAttendance: 85,
+  const handleOpenMetrics = (eventId: number, name?: string) => {
+    setMetricsEventId(eventId);
+    setMetricsEventName(name);
+    setMetricsOpen(true);
   };
+
+  const handleCloseMetrics = () => {
+    setMetricsOpen(false);
+    setMetricsEventId(null);
+    setMetricsEventName(undefined);
+  };
+
+  // Se eliminaron métricas simuladas de dashboard global
 
   if (isLoading) {
     return (
@@ -189,7 +165,7 @@ const OrganizerEvents: React.FC = () => {
               },
             }}
           />
-          <Typography color="text.secondary">Cargando dashboard...</Typography>
+          <Typography color="text.secondary">Cargando...</Typography>
         </Box>
       </Box>
     );
@@ -206,7 +182,7 @@ const OrganizerEvents: React.FC = () => {
     >
       <Container
         maxWidth={false}
-        sx={{ 
+        sx={{
           py: 3,
           px: { xs: 2, sm: 3, md: 2, lg: 3, xl: 4 },
           width: '100%',
@@ -294,7 +270,7 @@ const OrganizerEvents: React.FC = () => {
                   />
                   <Chip
                     icon={<EventAvailableIcon />}
-                    label={`${metrics.activeEvents} Eventos Activos`}
+                    label={`${events.filter((e) => e.state === 'active').length} Eventos Activos`}
                     variant="outlined"
                     color="primary"
                     sx={{
@@ -346,113 +322,7 @@ const OrganizerEvents: React.FC = () => {
           </CardContent>
         </Card>
 
-        {/* Métricas Dashboard */}
-        <Grid
-          container
-          spacing={3}
-          sx={{ mb: 4 }}
-        >
-          {[
-            {
-              title: 'Eventos Totales',
-              value: metrics.totalEvents,
-              icon: <EventIcon />,
-              change: '+12%',
-              color: theme.palette.primary.main,
-            },
-            {
-              title: 'Boletos Vendidos',
-              value: metrics.totalTicketsSold,
-              icon: <PeopleIcon />,
-              change: '+8%',
-              color: theme.palette.info.main,
-            },
-            {
-              title: 'Ingresos Totales',
-              value: `$${metrics.totalRevenue.toLocaleString()}`,
-              icon: <AttachMoneyIcon />,
-              change: '+15%',
-              color: theme.palette.success.main,
-            },
-            {
-              title: 'Asistencia Promedio',
-              value: `${metrics.averageAttendance}%`,
-              icon: <TrendingUpIcon />,
-              change: '+5%',
-              color: theme.palette.warning.main,
-            },
-          ].map((metric, index) => (
-            <Grid
-              item
-              xs={12}
-              sm={6}
-              md={3}
-              key={index}
-            >
-              <Card
-                sx={{
-                  background: theme.palette.background.paper,
-                  border: `1px solid ${theme.palette.divider}`,
-                  borderRadius: 2,
-                  p: 2.5,
-                  height: '100%',
-                  position: 'relative',
-                  overflow: 'hidden',
-                  transition: 'all 0.3s ease',
-                  '&:hover': {
-                    transform: 'translateY(-4px)',
-                    boxShadow: theme.shadows[4],
-                    borderColor: theme.palette.primary.main,
-                  },
-                }}
-              >
-                <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 2 }}>
-                  <Box
-                    sx={{
-                      p: 1.5,
-                      borderRadius: 2,
-                      bgcolor: `${metric.color}1A`,
-                      color: metric.color,
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                    }}
-                  >
-                    {metric.icon}
-                  </Box>
-                  <Chip
-                    label={metric.change}
-                    size="small"
-                    sx={{
-                      bgcolor: theme.palette.action.hover,
-                      color: theme.palette.text.secondary,
-                      fontWeight: 600,
-                      fontSize: '0.75rem',
-                    }}
-                  />
-                </Box>
-
-                <Typography
-                  variant="h4"
-                  sx={{
-                    fontWeight: 800,
-                    color: theme.palette.text.primary,
-                    mb: 0.5,
-                  }}
-                >
-                  {metric.value}
-                </Typography>
-                <Typography
-                  variant="body2"
-                  color="text.secondary"
-                  fontWeight={500}
-                >
-                  {metric.title}
-                </Typography>
-              </Card>
-            </Grid>
-          ))}
-        </Grid>
+        {/* Se eliminan métricas de dashboard global */}
 
         {/* Tabs Container */}
         <Paper
@@ -464,164 +334,35 @@ const OrganizerEvents: React.FC = () => {
             boxShadow: theme.shadows[1],
           }}
         >
-          <Box
-            sx={{
-              borderBottom: `1px solid ${theme.palette.divider}`,
-            }}
-          >
-            <Tabs
-              value={tabValue}
-              onChange={handleTabChange}
-              aria-label="organizer tabs"
-              sx={{
-                px: 3,
-                '& .MuiTab-root': {
-                  fontWeight: 600,
-                  minHeight: 72,
-                  textTransform: 'none',
-                  fontSize: '1.1rem',
-                  transition: 'all 0.3s ease',
-                  '&:hover': {
-                    color: theme.palette.primary.main,
-                    transform: 'translateY(-2px)',
-                  },
-                },
-                '& .MuiTabs-indicator': {
-                  height: 3,
-                  borderRadius: '3px 3px 0 0',
-                  background: theme.palette.primary.main,
-                },
-              }}
-            >
-              <Tab
-                icon={<DashboardIcon sx={{ mb: 0.5 }} />}
-                label="Dashboard"
-                {...a11yProps(0)}
-                sx={{
-                  '&.Mui-selected': {
-                    color: theme.palette.primary.main,
-                  },
-                }}
-              />
-              <Tab
-                icon={
-                  <Badge
-                    badgeContent={metrics.totalEvents}
-                    color="primary"
-                  >
-                    <EventIcon sx={{ mb: 0.5 }} />
-                  </Badge>
-                }
-                label="Mis Eventos"
-                {...a11yProps(1)}
-                sx={{
-                  '&.Mui-selected': {
-                    color: theme.palette.primary.main,
-                  },
-                }}
-              />
-            </Tabs>
+          {/* Encabezado "Mis Eventos" */}
+          <Box sx={{ p: 3, borderBottom: `1px solid ${theme.palette.divider}` }}>
+            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <Box>
+                <Typography
+                  variant="h5"
+                  fontWeight={700}
+                >
+                  Mis Eventos
+                </Typography>
+                <Typography
+                  variant="body2"
+                  color="text.secondary"
+                >
+                  Gestiona y monitorea tus eventos
+                </Typography>
+              </Box>
+              <Button
+                variant="contained"
+                startIcon={<AddIcon />}
+                onClick={handleCreateEvent}
+              >
+                Crear evento
+              </Button>
+            </Box>
           </Box>
 
-          {/* Tab Panel 1 - Dashboard */}
-          <TabPanel
-            value={tabValue}
-            index={0}
-          >
-            <Box sx={{ textAlign: 'center', py: 12 }}>
-              <Box
-                sx={{
-                  position: 'relative',
-                  display: 'inline-block',
-                  mb: 4,
-                }}
-              >
-                <DashboardIcon
-                  sx={{
-                    fontSize: 120,
-                    color: theme.palette.primary.light,
-                    opacity: 0.6,
-                  }}
-                />
-              </Box>
-
-              <Typography
-                variant="h2"
-                sx={{
-                  fontWeight: 800,
-                  mb: 2,
-                  background: `linear-gradient(135deg, ${theme.palette.text.primary} 0%, ${theme.palette.primary.main} 100%)`,
-                  backgroundClip: 'text',
-                  WebkitBackgroundClip: 'text',
-                  WebkitTextFillColor: 'transparent',
-                }}
-              >
-                Dashboard del Organizador
-              </Typography>
-
-              <Typography
-                variant="h6"
-                color="text.secondary"
-                sx={{
-                  maxWidth: 600,
-                  mx: 'auto',
-                  mb: 4,
-                  fontWeight: 400,
-                  lineHeight: 1.6,
-                }}
-              >
-                Gestiona tus eventos, visualiza métricas importantes y controla tu negocio desde un solo lugar
-              </Typography>
-
-              <Box sx={{ display: 'flex', justifyContent: 'center', gap: 2 }}>
-                <Button
-                  variant="contained"
-                  size="large"
-                  startIcon={<TrendingUpIcon />}
-                  sx={{
-                    borderRadius: 2,
-                    px: 4,
-                    py: 1.5,
-                    fontWeight: 600,
-                    textTransform: 'none',
-                    boxShadow: theme.shadows[2],
-                    '&:hover': {
-                      boxShadow: theme.shadows[4],
-                      transform: 'translateY(-2px)',
-                    },
-                    transition: 'all 0.3s ease',
-                  }}
-                >
-                  Ver Analíticas
-                </Button>
-                <Button
-                  variant="outlined"
-                  size="large"
-                  startIcon={<AddIcon />}
-                  onClick={handleCreateEvent}
-                  sx={{
-                    borderRadius: 2,
-                    px: 4,
-                    py: 1.5,
-                    fontWeight: 600,
-                    textTransform: 'none',
-                    '&:hover': {
-                      transform: 'translateY(-2px)',
-                    },
-                    transition: 'all 0.3s ease',
-                  }}
-                >
-                  Crear Evento
-                </Button>
-              </Box>
-            </Box>
-          </TabPanel>
-
-          {/* Tab Panel 2 - Mis Eventos */}
-          <TabPanel
-            value={tabValue}
-            index={1}
-          >
+          {/* Contenido - Mis Eventos */}
+          <Box>
             <Box sx={{ position: 'relative' }}>
               {/* Header con botón de crear evento */}
               <Box
@@ -699,10 +440,12 @@ const OrganizerEvents: React.FC = () => {
                   </Typography>
                 </Box>
               ) : events.length > 0 ? (
-                <Box sx={{ 
-                  p: { xs: 2, sm: 3, md: 4 },
-                  width: '100%'
-                }}>
+                <Box
+                  sx={{
+                    p: { xs: 2, sm: 3, md: 4 },
+                    width: '100%',
+                  }}
+                >
                   <Box
                     sx={{
                       display: 'flex',
@@ -710,7 +453,7 @@ const OrganizerEvents: React.FC = () => {
                       gap: { xs: 3, sm: 4, md: 5, lg: 6 },
                       justifyContent: 'center',
                       alignItems: 'flex-start',
-                      width: '100%'
+                      width: '100%',
                     }}
                   >
                     {events.map((event) => (
@@ -722,12 +465,12 @@ const OrganizerEvents: React.FC = () => {
                             sm: 'calc(50% - 16px)',
                             md: 'calc(50% - 20px)',
                             lg: 'calc(33.333% - 24px)',
-                            xl: 'calc(25% - 24px)'
+                            xl: 'calc(25% - 24px)',
                           },
                           minWidth: { xs: '280px', sm: '300px', md: '320px' },
                           maxWidth: { xs: '100%', sm: '400px', md: '380px', lg: '350px' },
                           flexGrow: 0,
-                          flexShrink: 0
+                          flexShrink: 0,
                         }}
                       >
                         <EventCard
@@ -735,6 +478,15 @@ const OrganizerEvents: React.FC = () => {
                           admin={true}
                           onEditEvent={handleEditEvent}
                         />
+                        <Box sx={{ display: 'flex', justifyContent: 'flex-end', mt: 1 }}>
+                          <Button
+                            size="small"
+                            variant="outlined"
+                            onClick={() => handleOpenMetrics(event.id as number, event.name)}
+                          >
+                            Ver métricas
+                          </Button>
+                        </Box>
                       </Box>
                     ))}
                   </Box>
@@ -802,7 +554,7 @@ const OrganizerEvents: React.FC = () => {
                 </Box>
               )}
             </Box>
-          </TabPanel>
+          </Box>
         </Paper>
 
         {/* Floating Action Button */}
@@ -885,6 +637,12 @@ const OrganizerEvents: React.FC = () => {
           </Alert>
         </Snackbar>
       </Container>
+      <EventMetricsModal
+        open={metricsOpen}
+        onClose={handleCloseMetrics}
+        eventId={metricsEventId || 0}
+        eventName={metricsEventName}
+      />
     </Box>
   );
 };
